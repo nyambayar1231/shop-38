@@ -7,7 +7,7 @@ app.get('/', (c) => {
 })
 
 app.get("/health", (c) => {
-  return c.text("Healthy")
+  return c.text("Healthy deployments!!!")
 })
 
 
