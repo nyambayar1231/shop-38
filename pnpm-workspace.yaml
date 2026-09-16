@@ -1,5 +1,10 @@
 packages:
   - "apps/*"
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
 allowBuilds:
   esbuild: true
   workerd: true
+minimumReleaseAgeExclude:
+  - hono@4.13.8
