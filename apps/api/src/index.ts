@@ -6,4 +6,10 @@ app.get('/', (c) => {
   return c.text('Hello Hono!')
 })
 
+app.get("/health", (c) => {
+  return c.text("Healthy")
+})
+
+
+
 export default app
