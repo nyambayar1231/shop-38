@@ -1,5 +1,6 @@
 packages:
-  - "apps/*"
+  - 'apps/*'
+  - 'packages/*'
 onlyBuiltDependencies:
   - esbuild
   - workerd
@@ -8,3 +9,7 @@ allowBuilds:
   workerd: true
 minimumReleaseAgeExclude:
   - hono@4.13.8
+catalog:
+  '@types/node': ^24.13.3
+  typescript: ^5.9.3
+  vitest: ^4.1.10
