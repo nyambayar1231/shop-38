@@ -1,3 +1,4 @@
+import { Link, useRouterState } from '@tanstack/react-router'
 import { ChevronsUpDown, LayoutDashboard, Shapes, Store } from 'lucide-react'
 import {
   Sidebar,
@@ -20,17 +21,19 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const navItems = [
-  { title: 'Нүүр', icon: LayoutDashboard, isActive: true },
-  { title: 'Ангилал', icon: Shapes, isActive: false },
+  { title: 'Нүүр', icon: LayoutDashboard, to: '/' as const },
+  { title: 'Ангилал', icon: Shapes, to: '/categories' as const },
 ]
 
 export function AppSidebar() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<a href="#" />}>
+            <SidebarMenuButton size="lg" render={<Link to="/" />}>
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Store className="size-4" />
               </div>
@@ -50,8 +53,8 @@ export function AppSidebar() {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    render={<a href="#" />}
-                    isActive={item.isActive}
+                    render={<Link to={item.to} />}
+                    isActive={pathname === item.to}
                     tooltip={item.title}
                   >
                     <item.icon />
