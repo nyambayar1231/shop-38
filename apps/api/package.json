@@ -9,15 +9,16 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
-    "hono": "catalog:",
     "@hono/zod-validator": "^0.9.1",
-    "zod": "catalog:",
-    "drizzle-orm": "catalog:",
     "@shop-38/contracts": "workspace:*",
-    "@shop-38/db": "workspace:*"
+    "@shop-38/db": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "wrangler": "^4.110.0",
-    "@types/node": "catalog:"
+    "@cloudflare/workers-types": "^5.20260916.1",
+    "@types/node": "catalog:",
+    "wrangler": "^4.132.0"
   }
 }

@@ -19,9 +19,10 @@
     "postgres": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260916.1",
     "@types/node": "catalog:",
+    "drizzle-kit": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "drizzle-kit": "catalog:"
+    "vitest": "catalog:"
   }
 }

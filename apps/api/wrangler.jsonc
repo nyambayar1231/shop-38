@@ -9,7 +9,13 @@
       "enabled": true,
       "invocation_logs": true
     }
-  }
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "5aca8a75fe664640a64b9a6775ba3057"
+    }
+  ]
   // "vars": {
   //   "MY_VAR": "my-variable"
   // },

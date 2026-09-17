@@ -7,7 +7,7 @@ import { categoryRoutes } from './features/category/category.routes.js';
 const app = new Hono<AppEnv>()
   .use('*', cors())
   .use('*', async (c, next) => {
-    c.set('db', createDb(c.env.DATABASE_URL));
+    c.set('db', createDb(c.env.HYPERDRIVE.connectionString));
     await next();
   })
   .get('/health', (c) => {
