@@ -8,6 +8,9 @@
   },
   "dependencies": {
     "hono": "^4.13.8",
+    "@hono/zod-validator": "^0.9.1",
+    "zod": "catalog:",
+    "drizzle-orm": "catalog:",
     "@shop-38/contracts": "workspace:*",
     "@shop-38/db": "workspace:*"
   },
