@@ -10,7 +10,7 @@ try {
 }
 
 export default defineConfig({
-  schema: './src/schema.ts',
+  schema: './src/schema/*.ts',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
