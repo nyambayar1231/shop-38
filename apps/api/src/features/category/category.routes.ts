@@ -3,10 +3,12 @@ import { zValidator } from '@hono/zod-validator';
 import { HTTPException } from 'hono/http-exception';
 import type { AppEnv } from '../../env.js';
 import {
-  categoryIdParamSchema,
   createCategorySchema,
   updateCategorySchema,
-} from './category.schema.js';
+  categoryIdParamSchema,
+} from '@shop-38/contracts';
+
+import { rethrowAsConflict } from './category.errors.js';
 import * as categoryService from './category.service.js';
 
 export const categoryRoutes = new Hono<AppEnv>()
@@ -20,9 +22,12 @@ export const categoryRoutes = new Hono<AppEnv>()
     if (!category) throw new HTTPException(404, { message: 'Category not found' });
     return c.json(category);
   })
+
   .post('/', zValidator('json', createCategorySchema), async (c) => {
     const input = c.req.valid('json');
-    const category = await categoryService.createCategory(c.get('db'), input);
+    const category = await categoryService
+      .createCategory(c.get('db'), input)
+      .catch(rethrowAsConflict);
     return c.json(category, 201);
   })
   .patch(
@@ -32,7 +37,9 @@ export const categoryRoutes = new Hono<AppEnv>()
     async (c) => {
       const { id } = c.req.valid('param');
       const input = c.req.valid('json');
-      const category = await categoryService.updateCategory(c.get('db'), id, input);
+      const category = await categoryService
+        .updateCategory(c.get('db'), id, input)
+        .catch(rethrowAsConflict);
       if (!category) throw new HTTPException(404, { message: 'Category not found' });
       return c.json(category);
     },

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { Toaster } from '@/components/ui/sonner'
 
 const pageTitles: Record<string, string> = {
   '/': 'Нүүр',
@@ -43,6 +44,7 @@ function RootLayout() {
           <Outlet />
         </main>
       </SidebarInset>
+      <Toaster position="bottom-right" />
       {import.meta.env.DEV && <ReactQueryDevtools buttonPosition="bottom-right" />}
     </SidebarProvider>
   )
