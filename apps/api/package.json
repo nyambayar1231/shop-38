@@ -12,6 +12,7 @@
     "@hono/zod-validator": "^0.9.1",
     "@shop-38/contracts": "workspace:*",
     "@shop-38/db": "workspace:*",
+    "aws4fetch": "^1.0.20",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

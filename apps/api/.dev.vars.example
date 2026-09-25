@@ -1,0 +1,9 @@
+DATABASE_URL=postgres://user:password@localhost:5432/shop38
+CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://user:password@localhost:5432/shop38
+
+# S3 uploads. In production, set the two keys with `wrangler secret put`.
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+# AWS_REGION and S3_BUCKET come from `vars` in wrangler.jsonc.
+# Optional: base URL stored in `file.url`, e.g. https://cdn.example.com
+S3_PUBLIC_URL=
