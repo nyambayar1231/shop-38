@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { createDb } from '@shop-38/db';
 import type { AppEnv } from './env.js';
 import { categoryRoutes } from './features/category/category.routes.js';
+import { fileRoutes } from './features/file/file.routes.js';
 
 const app = new Hono<AppEnv>()
   .use('*', cors())
@@ -13,7 +14,8 @@ const app = new Hono<AppEnv>()
   .get('/health', (c) => {
     return c.text('Healthy deployments!!!');
   })
-  .route('/categories', categoryRoutes);
+  .route('/categories', categoryRoutes)
+  .route('/files', fileRoutes);
 
 export type AppType = typeof app;
 export default app;

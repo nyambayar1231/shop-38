@@ -15,10 +15,13 @@
       "binding": "HYPERDRIVE",
       "id": "5aca8a75fe664640a64b9a6775ba3057"
     }
-  ]
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
+  ],
+  // Non-secret S3 config. AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY are set with
+  // `wrangler secret put`, and locally in .dev.vars.
+  "vars": {
+    "AWS_REGION": "ap-northeast-2",
+    "S3_BUCKET": "shop38-files"
+  }
   // "kv_namespaces": [
   //   {
   //     "binding": "MY_KV_NAMESPACE",
