@@ -16,10 +16,10 @@ function validateImage(file: File): string | null {
   return null
 }
 
-type CategoryImageFieldProps = {
+type ImageUploadFieldProps = {
   /** Put on the file input, so the field's `<Label htmlFor>` opens the picker. */
   id: string
-  /** The image the category already has, if any. */
+  /** The image the record already has, if any. */
   initialUrl: string | null
   /** Called with the uploaded file's id, or `null` when the image is removed. */
   onChange: (fileId: string | null) => void
@@ -31,12 +31,12 @@ type CategoryImageFieldProps = {
  * The current value changes only once an upload succeeds: a failed replacement
  * leaves the previous image in place instead of removing it.
  */
-export function CategoryImageField({
+export function ImageUploadField({
   id,
   initialUrl,
   onChange,
   onUploadingChange,
-}: CategoryImageFieldProps) {
+}: ImageUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const blobUrlsRef = useRef(new Set<string>())

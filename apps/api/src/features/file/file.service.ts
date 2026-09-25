@@ -5,6 +5,28 @@ import type { Database } from '@shop-38/db';
 import type { CreateUploadInput } from '@shop-38/contracts';
 import { buildObjectKey, type Storage } from '../../lib/storage.js';
 
+/**
+ * `imageFileId` must name a file whose upload S3 has confirmed. A pending one has
+ * no object behind it yet, so it would render as a broken image.
+ */
+const invalidImage = () =>
+  new HTTPException(422, {
+    res: Response.json({ error: 'invalid_image', field: 'imageFileId' }, { status: 422 }),
+  });
+
+/**
+ * For anything that references a file as its image. The foreign key proves the
+ * file exists; only this proves it was actually uploaded. `null`/`undefined` pass.
+ */
+export const assertUploadedImage = async (db: Database, fileId: string | null | undefined) => {
+  if (!fileId) return;
+  const [row] = await db
+    .select({ status: schema.file.status })
+    .from(schema.file)
+    .where(eq(schema.file.id, fileId));
+  if (row?.status !== 'uploaded') throw invalidImage();
+};
+
 export const getFileById = async (db: Database, id: string) => {
   const [row] = await db.select().from(schema.file).where(eq(schema.file.id, id));
   return row;

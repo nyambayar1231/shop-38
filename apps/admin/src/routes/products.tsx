@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Thumbnail } from '@/components/thumbnail'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -20,76 +19,73 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useCategoriesQuery } from '@/features/category/category-api'
-import type { Category } from '@/features/category/category-api'
-import { CategoryDeleteDialog } from '@/features/category/category-delete-dialog'
-import { CategoryFormDialog } from '@/features/category/category-form-dialog'
-import { CATEGORY_STATUS_LABELS } from '@/features/category/category-status'
+import { useProductsQuery } from '@/features/product/product-api'
+import type { Product } from '@/features/product/product-api'
+import { ProductDeleteDialog } from '@/features/product/product-delete-dialog'
+import { ProductFormDialog } from '@/features/product/product-form-dialog'
 
-export const Route = createFileRoute('/categories')({
-  component: Categories,
+export const Route = createFileRoute('/products')({
+  component: Products,
 })
 
-function Categories() {
-  const { data: categories, isPending, isError } = useCategoriesQuery()
-  const [editing, setEditing] = useState<Category | null>(null)
+function Products() {
+  const { data: products, isPending, isError } = useProductsQuery()
+  const [editing, setEditing] = useState<Product | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [deleting, setDeleting] = useState<Category | null>(null)
+  const [deleting, setDeleting] = useState<Product | null>(null)
 
   function openCreate() {
     setEditing(null)
     setIsFormOpen(true)
   }
 
-  function openEdit(category: Category) {
-    setEditing(category)
+  function openEdit(product: Product) {
+    setEditing(product)
     setIsFormOpen(true)
   }
 
   return (
     <>
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          Барааны ангилалыг үүсгэх, засах, устгах.
-        </p>
+        <p className="text-sm text-muted-foreground">Барааг бүртгэх, засах, устгах.</p>
         <Button onClick={openCreate}>
           <Plus data-icon="inline-start" />
-          Шинэ ангилал
+          Шинэ бараа
         </Button>
       </div>
 
-      <CategoryList
-        categories={categories}
+      <ProductList
+        products={products}
         isPending={isPending}
         isError={isError}
         onEdit={openEdit}
         onDelete={setDeleting}
       />
 
-      <CategoryFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} category={editing} />
-      <CategoryDeleteDialog
+      <ProductFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} product={editing} />
+      <ProductDeleteDialog
         open={deleting !== null}
         onOpenChange={(open) => {
           if (!open) setDeleting(null)
         }}
-        category={deleting}
+        product={deleting}
       />
     </>
   )
 }
 
-function CategoryList({
-  categories,
+function ProductList({
+  products,
   isPending,
   isError,
   onEdit,
   onDelete,
 }: {
-  categories: Category[] | undefined
+  products: Product[] | undefined
   isPending: boolean
   isError: boolean
-  onEdit: (category: Category) => void
-  onDelete: (category: Category) => void
+  onEdit: (product: Product) => void
+  onDelete: (product: Product) => void
 }) {
   if (isPending) {
     return (
@@ -105,15 +101,15 @@ function CategoryList({
   if (isError) {
     return (
       <Card className="flex flex-1 items-center justify-center text-destructive">
-        Ангилалын жагсаалтыг татаж чадсангүй.
+        Барааны жагсаалтыг татаж чадсангүй.
       </Card>
     )
   }
 
-  if (!categories || categories.length === 0) {
+  if (!products || products.length === 0) {
     return (
       <Card className="flex flex-1 items-center justify-center text-muted-foreground">
-        Ангилал алга байна. «Шинэ ангилал» дарж эхлээрэй.
+        Бараа алга байна. «Шинэ бараа» дарж эхлээрэй.
       </Card>
     )
   }
@@ -127,8 +123,9 @@ function CategoryList({
               <span className="sr-only">Зураг</span>
             </TableHead>
             <TableHead>Нэр</TableHead>
+            <TableHead>Код</TableHead>
+            <TableHead>Ангилал</TableHead>
             <TableHead>Слаг</TableHead>
-            <TableHead>Төлөв</TableHead>
             <TableHead className="w-full whitespace-normal">Тайлбар</TableHead>
             <TableHead className="w-0">
               <span className="sr-only">Үйлдэл</span>
@@ -136,35 +133,32 @@ function CategoryList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.map((category) => (
-            <TableRow key={category.id}>
+          {products.map((product) => (
+            <TableRow key={product.id}>
               <TableCell>
-                <Thumbnail src={category.imageUrl} />
+                <Thumbnail src={product.imageUrl} />
               </TableCell>
-              <TableCell className="font-medium">{category.name}</TableCell>
-              <TableCell className="text-muted-foreground">{category.slug}</TableCell>
-              <TableCell>
-                <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
-                  {CATEGORY_STATUS_LABELS[category.status]}
-                </Badge>
-              </TableCell>
+              <TableCell className="font-medium">{product.name}</TableCell>
+              <TableCell className="text-muted-foreground">{product.code || '—'}</TableCell>
+              <TableCell>{product.category.name}</TableCell>
+              <TableCell className="text-muted-foreground">{product.slug}</TableCell>
               <TableCell className="max-w-0 truncate whitespace-normal text-muted-foreground">
-                {category.description || '—'}
+                {product.description || '—'}
               </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={<Button variant="ghost" size="icon-sm" />}
-                    aria-label={`${category.name} ангилалын үйлдэл`}
+                    aria-label={`${product.name} барааны үйлдэл`}
                   >
                     <MoreHorizontal />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(category)}>
+                    <DropdownMenuItem onClick={() => onEdit(product)}>
                       <Pencil />
                       Засах
                     </DropdownMenuItem>
-                    <DropdownMenuItem variant="destructive" onClick={() => onDelete(category)}>
+                    <DropdownMenuItem variant="destructive" onClick={() => onDelete(product)}>
                       <Trash2 />
                       Устгах
                     </DropdownMenuItem>

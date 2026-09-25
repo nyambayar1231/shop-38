@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { ChevronsUpDown, LayoutDashboard, Shapes, Store } from 'lucide-react'
+import { ChevronsUpDown, LayoutDashboard, Package, Shapes, Store } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 const navItems = [
   { title: 'Нүүр', icon: LayoutDashboard, to: '/' as const },
   { title: 'Ангилал', icon: Shapes, to: '/categories' as const },
+  { title: 'Бараа', icon: Package, to: '/products' as const },
 ]
 
 export function AppSidebar() {

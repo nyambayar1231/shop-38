@@ -8,7 +8,7 @@ import {
   categoryIdParamSchema,
 } from '@shop-38/contracts';
 
-import { rethrowAsConflict } from './category.errors.js';
+import { rethrowAsConflict, rethrowAsInUse } from './category.errors.js';
 import * as categoryService from './category.service.js';
 
 export const categoryRoutes = new Hono<AppEnv>()
@@ -46,7 +46,9 @@ export const categoryRoutes = new Hono<AppEnv>()
   )
   .delete('/:id', zValidator('param', categoryIdParamSchema), async (c) => {
     const { id } = c.req.valid('param');
-    const category = await categoryService.deleteCategory(c.get('db'), id);
+    const category = await categoryService
+      .deleteCategory(c.get('db'), id)
+      .catch(rethrowAsInUse);
     if (!category) throw new HTTPException(404, { message: 'Category not found' });
     return c.body(null, 204);
   });

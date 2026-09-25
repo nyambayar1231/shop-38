@@ -15,6 +15,7 @@ import { Toaster } from '@/components/ui/sonner'
 const pageTitles: Record<string, string> = {
   '/': 'Нүүр',
   '/categories': 'Ангилал',
+  '/products': 'Бараа',
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({

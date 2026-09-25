@@ -29,6 +29,20 @@
       "when": 1790305631653,
       "tag": "0003_needy_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790307441515,
+      "tag": "0004_jazzy_dazzler",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790308213564,
+      "tag": "0005_noisy_nehzno",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "product" ADD COLUMN "image_file_id" uuid;--> statement-breakpoint
+ALTER TABLE "product" ADD CONSTRAINT "product_image_file_id_file_id_fk" FOREIGN KEY ("image_file_id") REFERENCES "public"."file"("id") ON DELETE set null ON UPDATE no action;

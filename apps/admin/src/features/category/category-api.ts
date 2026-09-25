@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InferResponseType } from 'hono/client'
 import type { CreateCategoryInput, UpdateCategoryInput } from '@shop-38/contracts'
 import { apiClient } from '@/lib/api-client'
+import { productKeys } from '@/features/product/product-api'
 
 export type Category = InferResponseType<typeof apiClient.categories.$get>[number]
 
@@ -71,7 +72,11 @@ export function useUpdateCategory() {
       if (!res.ok) throw await toError(res, 'Ангилалын мэдээллийг хадгалж чадсангүй')
       return res.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: categoryKeys.all }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: categoryKeys.all })
+      // The product list shows each product's category name.
+      void queryClient.invalidateQueries({ queryKey: productKeys.all })
+    },
   })
 }
 
@@ -81,6 +86,10 @@ export function useDeleteCategory() {
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await apiClient.categories[':id'].$delete({ param: { id } })
+      // Thrown as an HTTPException, so the RPC types don't list it among the statuses.
+      if ((res.status as number) === 409) {
+        throw new Error('Энэ ангилалд бараа бүртгэлтэй тул устгах боломжгүй. Эхлээд барааг өөр ангилалд шилжүүлнэ үү.')
+      }
       if (!res.ok) throw new Error('Ангилалыг устгаж чадсангүй')
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: categoryKeys.all }),
