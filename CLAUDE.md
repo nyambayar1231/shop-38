@@ -1,5 +1,9 @@
 # shop-38
 
+## Git branches
+
+Never create a branch — local (`git checkout -b`, `git switch -c`, `git branch <name>`) or remote (pushing to a branch name that doesn't exist on `origin` yet) — unless the user explicitly asks for one. Commit on the current branch, and push only to that branch's existing remote counterpart. If a task seems to need a new branch, ask first.
+
 ## apps/admin localization
 
 All user-facing UI text in `apps/admin` (nav labels, headings, buttons, breadcrumbs, empty states, etc.) must be written in **Mongolian (Cyrillic script)**, not English.
