@@ -1,5 +1,6 @@
 import { pgTable, text, uuid, timestamp, index, pgEnum } from 'drizzle-orm/pg-core';
 import { CATEGORY_STATUSES } from '@shop-38/contracts';
+import { file } from './file.js';
 
 export const categoryStatus = pgEnum('category_status', CATEGORY_STATUSES);
 
@@ -11,6 +12,8 @@ export const category = pgTable(
     slug: text('slug').unique().notNull(),
     status: categoryStatus('status').notNull().default('active'),
     description: text('description'),
+    /** Cleared, not cascaded, if the file row ever goes: a category outlives its picture. */
+    imageFileId: uuid('image_file_id').references(() => file.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

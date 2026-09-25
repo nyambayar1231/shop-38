@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ImageIcon, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -122,6 +122,9 @@ function CategoryList({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-0">
+              <span className="sr-only">Зураг</span>
+            </TableHead>
             <TableHead>Нэр</TableHead>
             <TableHead>Слаг</TableHead>
             <TableHead>Төлөв</TableHead>
@@ -134,6 +137,20 @@ function CategoryList({
         <TableBody>
           {categories.map((category) => (
             <TableRow key={category.id}>
+              <TableCell>
+                <div className="flex size-9 items-center justify-center overflow-hidden rounded-md border bg-muted">
+                  {category.imageUrl ? (
+                    <img
+                      src={category.imageUrl}
+                      alt=""
+                      loading="lazy"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <ImageIcon className="size-4 text-muted-foreground" aria-hidden />
+                  )}
+                </div>
+              </TableCell>
               <TableCell className="font-medium">{category.name}</TableCell>
               <TableCell className="text-muted-foreground">{category.slug}</TableCell>
               <TableCell>

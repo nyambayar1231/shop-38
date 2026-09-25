@@ -12,6 +12,8 @@ export const createCategorySchema = z.object({
   name: z.string().min(1).max(150),
   description: z.string().max(300).nullish(),
   status: z.enum(CATEGORY_STATUSES),
+  /** A file from POST /files that has completed its upload. `null` removes the image. */
+  imageFileId: z.uuid().nullish(),
 });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;

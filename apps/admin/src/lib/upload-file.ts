@@ -28,6 +28,11 @@ export async function uploadFile(file: File, signal?: AbortSignal): Promise<Uplo
     headers: upload.headers,
     body: file,
     signal,
+  }).catch((error: unknown) => {
+    if (signal?.aborted) throw error
+    // A rejected fetch here is a network failure or, most often, the bucket's CORS
+    // rule not allowing this origin. The browser only reports "Failed to fetch".
+    throw new Error('Файлыг хадгалах серверт холбогдож чадсангүй')
   })
   if (!put.ok) throw new Error('Файлыг хадгалж чадсангүй')
 

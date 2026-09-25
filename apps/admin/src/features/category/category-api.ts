@@ -31,6 +31,10 @@ async function toError(response: Response, fallbackMessage: string): Promise<Err
     const field = CONFLICT_FIELDS.find((candidate) => candidate === body?.field)
     if (field) return new CategoryConflictError(field)
   }
+  // The image was picked but its upload never got confirmed by S3.
+  if (response.status === 422) {
+    return new Error('Зураг бүрэн хуулагдаагүй байна. Зургаа дахин сонгоно уу.')
+  }
   return new Error(fallbackMessage)
 }
 

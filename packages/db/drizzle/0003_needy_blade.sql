@@ -1,0 +1,2 @@
+ALTER TABLE "category" ADD COLUMN "image_file_id" uuid;--> statement-breakpoint
+ALTER TABLE "category" ADD CONSTRAINT "category_image_file_id_file_id_fk" FOREIGN KEY ("image_file_id") REFERENCES "public"."file"("id") ON DELETE set null ON UPDATE no action;

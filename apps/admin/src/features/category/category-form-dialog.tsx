@@ -35,6 +35,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { CategoryConflictError, useCreateCategory, useUpdateCategory } from './category-api'
 import type { Category } from './category-api'
+import { CategoryImageField } from './category-image-field'
 import { CATEGORY_STATUS_OPTIONS } from './category-status'
 
 type FormField = 'name' | 'slug' | 'status' | 'description'
@@ -85,6 +86,7 @@ function changedFields(category: Category, next: CreateCategoryInput): UpdateCat
   if (next.slug !== category.slug) patch.slug = next.slug
   if (next.status !== category.status) patch.status = next.status
   if ((next.description ?? null) !== category.description) patch.description = next.description
+  if ((next.imageFileId ?? null) !== category.imageFileId) patch.imageFileId = next.imageFileId
   return patch
 }
 
@@ -123,6 +125,8 @@ function CategoryForm({
   const [description, setDescription] = useState(category?.description ?? '')
   const [errors, setErrors] = useState<FieldErrors>({})
   const [isSeoOpen, setIsSeoOpen] = useState(false)
+  const [imageFileId, setImageFileId] = useState<string | null>(category?.imageFileId ?? null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const createCategory = useCreateCategory()
   const updateCategory = useUpdateCategory()
@@ -130,6 +134,8 @@ function CategoryForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    // The submit button is disabled meanwhile, but Enter in a text input still submits.
+    if (isUploadingImage) return
 
     const parsed = createCategorySchema.safeParse({
       name: name.trim(),
@@ -138,6 +144,7 @@ function CategoryForm({
       ...(category ? { slug: slug.trim() } : {}),
       status,
       description: description.trim() || null,
+      imageFileId,
     })
     if (!parsed.success) {
       const fieldErrors = toFieldErrors(parsed.error)
@@ -202,6 +209,16 @@ function CategoryForm({
             />
           }
         />
+
+        <div className="grid gap-1.5">
+          <Label htmlFor={`${fieldId}-image`}>Зураг</Label>
+          <CategoryImageField
+            id={`${fieldId}-image`}
+            initialUrl={category?.imageUrl ?? null}
+            onChange={setImageFileId}
+            onUploadingChange={setIsUploadingImage}
+          />
+        </div>
 
         <Field
           id={`${fieldId}-status`}
@@ -285,8 +302,8 @@ function CategoryForm({
         <DialogClose render={<Button type="button" variant="outline" disabled={isPending} />}>
           Болих
         </DialogClose>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? 'Хадгалж байна…' : 'Хадгалах'}
+        <Button type="submit" disabled={isPending || isUploadingImage}>
+          {isPending ? 'Хадгалж байна…' : isUploadingImage ? 'Зураг хуулж байна…' : 'Хадгалах'}
         </Button>
       </DialogFooter>
     </form>

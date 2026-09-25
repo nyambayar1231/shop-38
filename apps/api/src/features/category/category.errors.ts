@@ -47,3 +47,12 @@ export function rethrowAsConflict(error: unknown): never {
   }
   throw error;
 }
+
+/**
+ * `imageFileId` must name a file whose upload S3 has confirmed. A pending one has
+ * no object behind it yet, so it would render as a broken image.
+ */
+export const invalidImage = () =>
+  new HTTPException(422, {
+    res: Response.json({ error: 'invalid_image', field: 'imageFileId' }, { status: 422 }),
+  });
