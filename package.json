@@ -4,7 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "turbo run dev --filter=api --filter=admin",
+    "dev:api": "pnpm --filter api dev",
+    "dev:admin": "pnpm --filter admin dev",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @shop-38/db db:generate",
+    "db:migrate": "pnpm --filter @shop-38/db db:migrate",
+    "db:studio": "pnpm --filter @shop-38/db db:studio"
   },
   "keywords": [],
   "author": "",
@@ -16,5 +22,6 @@
     "turbo": "^2.10.9",
     "typescript": "catalog:",
     "typescript-eslint": "^8.67.0"
-  }
+  },
+  "packageManager": "pnpm@11.8.0"
 }

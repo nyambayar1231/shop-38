@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ImageIcon, Loader2 } from 'lucide-react'
+import { RiImageLine, RiLoader4Line } from '@remixicon/react'
 import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from '@shop-38/contracts'
 import { Button } from '@/components/ui/button'
 import { uploadFile } from '@/lib/upload-file'
@@ -124,11 +124,11 @@ export function ImageUploadField({
           {previewUrl ? (
             <img src={previewUrl} alt="" className="size-full object-cover" />
           ) : (
-            <ImageIcon className="size-6 text-muted-foreground" aria-hidden />
+            <RiImageLine className="size-6 text-muted-foreground" aria-hidden />
           )}
           {isUploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-              <Loader2 className="size-5 animate-spin" aria-hidden />
+              <RiLoader4Line className="size-5 animate-spin" aria-hidden />
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
-import { ChevronRight } from 'lucide-react'
+import { RiArrowRightSLine } from '@remixicon/react'
 import type { ZodError } from 'zod'
 import {
   createCategorySchema,
@@ -26,13 +26,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { CategoryConflictError, useCreateCategory, useUpdateCategory } from './category-api'
 import type { Category } from './category-api'
@@ -211,7 +205,12 @@ function CategoryForm({
         />
 
         <div className="grid gap-1.5">
-          <Label htmlFor={`${fieldId}-image`}>Зураг</Label>
+          <Label
+            htmlFor={`${fieldId}-image`}
+            className="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+          >
+            Зураг
+          </Label>
           <ImageUploadField
             id={`${fieldId}-image`}
             initialUrl={category?.imageUrl ?? null}
@@ -225,24 +224,18 @@ function CategoryForm({
           label="Төлөв"
           error={errors.status}
           control={
-            <Select
+            <NativeSelect
+              id={`${fieldId}-status`}
+              className="w-full"
               value={status}
-              onValueChange={(value) => {
-                if (value) setStatus(value)
-              }}
-              items={CATEGORY_STATUS_OPTIONS}
+              onChange={(event) => setStatus(event.target.value as CategoryStatus)}
             >
-              <SelectTrigger id={`${fieldId}-status`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {CATEGORY_STATUS_OPTIONS.map((option) => (
+                <NativeSelectOption key={option.value} value={option.value}>
+                  {option.label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
           }
         />
 
@@ -271,7 +264,7 @@ function CategoryForm({
             <CollapsibleTrigger
               render={<Button type="button" variant="ghost" size="sm" className="-ml-4" />}
             >
-              <ChevronRight
+              <RiArrowRightSLine
                 data-icon="inline-start"
                 className="transition-transform group-data-[panel-open]/button:rotate-90"
               />
@@ -325,7 +318,12 @@ function Field({
 }) {
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label
+        htmlFor={id}
+        className="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+      >
+        {label}
+      </Label>
       {control}
       {error ? (
         <p className="text-xs text-destructive">{error}</p>

@@ -1,4 +1,4 @@
-import { ImageIcon } from 'lucide-react'
+import { RiImageLine } from '@remixicon/react'
 
 /** A small square image for table rows, with a placeholder when there is none. */
 export function Thumbnail({ src }: { src: string | null }) {
@@ -7,7 +7,7 @@ export function Thumbnail({ src }: { src: string | null }) {
       {src ? (
         <img src={src} alt="" loading="lazy" className="size-full object-cover" />
       ) : (
-        <ImageIcon className="size-4 text-muted-foreground" aria-hidden />
+        <RiImageLine className="size-4 text-muted-foreground" aria-hidden />
       )}
     </div>
   )

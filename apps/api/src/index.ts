@@ -5,6 +5,7 @@ import type { AppEnv } from './env.js';
 import { categoryRoutes } from './features/category/category.routes.js';
 import { fileRoutes } from './features/file/file.routes.js';
 import { productRoutes } from './features/product/product.routes.js';
+import { variantRoutes } from './features/variant/variant.routes.js';
 
 const app = new Hono<AppEnv>()
   .use('*', cors())
@@ -17,7 +18,8 @@ const app = new Hono<AppEnv>()
   })
   .route('/categories', categoryRoutes)
   .route('/files', fileRoutes)
-  .route('/products', productRoutes);
+  .route('/products', productRoutes)
+  .route('/variants', variantRoutes);
 
 export type AppType = typeof app;
 export default app;

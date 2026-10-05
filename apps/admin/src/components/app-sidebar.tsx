@@ -1,30 +1,39 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { ChevronsUpDown, LayoutDashboard, Package, Shapes, Store } from 'lucide-react'
+import {
+  RiDashboardLine,
+  RiPriceTag3Line,
+  RiShoppingBag3Line,
+  RiStackLine,
+  type RemixiconComponentType,
+} from '@remixicon/react'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
-const navItems = [
-  { title: 'Нүүр', icon: LayoutDashboard, to: '/' as const },
-  { title: 'Ангилал', icon: Shapes, to: '/categories' as const },
-  { title: 'Бараа', icon: Package, to: '/products' as const },
+const NAV: { to: '/' | '/products' | '/categories' | '/inventory'; label: string; icon: RemixiconComponentType }[] = [
+  { to: '/', label: 'Нүүр', icon: RiDashboardLine },
+  { to: '/products', label: 'Бараа', icon: RiShoppingBag3Line },
+  { to: '/inventory', label: 'Нөөц', icon: RiStackLine },
+  { to: '/categories', label: 'Ангилал', icon: RiPriceTag3Line },
 ]
+
+/**
+ * The dashboard only on its own path; any other section also for the pages
+ * under it — a variant page belongs to the products it is part of.
+ */
+function isActivePath(pathname: string, to: string) {
+  if (to === '/') return pathname === '/'
+  if (to === '/products' && pathname.startsWith('/variants/')) return true
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
@@ -32,34 +41,29 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link to="/" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Store className="size-4" />
-              </div>
-              <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-semibold">Shop 38</span>
-                <span className="text-xs text-muted-foreground">Админ</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <Link
+          to="/"
+          className="flex h-10 items-center gap-2 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+        >
+          <span className="font-heading text-lg font-bold tracking-tight">38</span>
+          <span className="font-heading text-sm font-semibold tracking-widest uppercase group-data-[collapsible=icon]:hidden">
+            Shop 38 админ
+          </span>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Цэс</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {NAV.map((item) => (
+                <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
+                    isActive={isActivePath(pathname, item.to)}
+                    tooltip={item.label}
                     render={<Link to={item.to} />}
-                    isActive={pathname === item.to}
-                    tooltip={item.title}
                   >
                     <item.icon />
-                    <span>{item.title}</span>
+                    <span>{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -68,26 +72,9 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
-                <Avatar className="size-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg">AD</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Админ</span>
-                  <span className="text-xs text-muted-foreground">admin@shop38.com</span>
-                </div>
-                <ChevronsUpDown className="ml-auto size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="min-w-56">
-                <DropdownMenuItem>Бүртгэл</DropdownMenuItem>
-                <DropdownMenuItem>Гарах</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="truncate px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+          admin@shop38.com
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

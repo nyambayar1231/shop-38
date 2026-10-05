@@ -1,37 +1,59 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Package, Receipt, Shapes, Users } from 'lucide-react'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ErrorBox, Loading, PageHeader, Stat } from '@/components/common'
+import { useCategoriesQuery } from '@/features/category/category-api'
+import { useProductsQuery } from '@/features/product/product-api'
 
 export const Route = createFileRoute('/')({
   component: Dashboard,
 })
 
-const stats = [
-  { label: 'Ангилал', value: '4', icon: Shapes },
-  { label: 'Бараа', value: '0', icon: Package },
-  { label: 'Захиалга', value: '0', icon: Receipt },
-  { label: 'Харилцагч', value: '0', icon: Users },
-]
-
 function Dashboard() {
+  const products = useProductsQuery()
+  const categories = useCategoriesQuery()
+
+  const list = products.data ?? []
+  const variantCount = list.reduce((sum, product) => sum + product.variantCount, 0)
+  const totalStock = list.reduce((sum, product) => sum + product.totalStock, 0)
+  const outOfStock = list.filter((product) => product.status === 'active' && product.totalStock <= 0)
+
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-              <div>
-                <CardDescription>{stat.label}</CardDescription>
-                <CardTitle className="text-2xl">{stat.value}</CardTitle>
-              </div>
-              <stat.icon className="size-5 text-muted-foreground" />
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-      <Card className="flex flex-1 items-center justify-center text-muted-foreground">
-        Удахгүй нэмэгдэнэ.
-      </Card>
+      <PageHeader title="Нүүр" description="Дэлгүүрийн өнөөдрийн байдал." />
+
+      <ErrorBox error={products.error ?? categories.error} />
+      {products.isPending || categories.isPending ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Stat label="Бараа">{list.length}</Stat>
+            <Stat label="Хувилбар">{variantCount}</Stat>
+            <Stat label="Нийт нөөц">{totalStock}</Stat>
+            <Stat label="Ангилал">{categories.data?.length ?? 0}</Stat>
+          </div>
+
+          {outOfStock.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Дууссан бараа
+              </h2>
+              <ul className="divide-y border-y">
+                {outOfStock.map((product) => (
+                  <li key={product.id} className="py-2.5 text-sm">
+                    <Link
+                      to="/products/$productId"
+                      params={{ productId: product.id }}
+                      className="font-medium hover:underline"
+                    >
+                      {product.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
     </>
   )
 }

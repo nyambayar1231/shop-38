@@ -1,3 +1,3 @@
-export * from './category.js';
+export * from './catalog.js';
 export * from './file.js';
-export * from './product.js';
+export * from './inventory.js';

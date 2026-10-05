@@ -6,9 +6,10 @@ import {
   updateProductSchema,
   productIdParamSchema,
   listProductsQuerySchema,
+  updateProductVariantsSchema,
 } from '@shop-38/contracts';
 import type { AppEnv } from '../../env.js';
-import { rethrowAsClientError } from './product.errors.js';
+import { rethrowAsClientError, rethrowAsHasStockHistory } from './product.errors.js';
 import * as productService from './product.service.js';
 
 export const productRoutes = new Hono<AppEnv>()
@@ -41,9 +42,24 @@ export const productRoutes = new Hono<AppEnv>()
       return c.json(product);
     },
   )
+  .put(
+    '/:id/variants',
+    zValidator('param', productIdParamSchema),
+    zValidator('json', updateProductVariantsSchema),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const product = await productService
+        .updateProductVariants(c.get('db'), id, c.req.valid('json'))
+        .catch(rethrowAsClientError);
+      if (!product) throw new HTTPException(404, { message: 'Product not found' });
+      return c.json(product);
+    },
+  )
   .delete('/:id', zValidator('param', productIdParamSchema), async (c) => {
     const { id } = c.req.valid('param');
-    const product = await productService.deleteProduct(c.get('db'), id);
+    const product = await productService
+      .deleteProduct(c.get('db'), id)
+      .catch(rethrowAsHasStockHistory);
     if (!product) throw new HTTPException(404, { message: 'Product not found' });
     return c.body(null, 204);
   });

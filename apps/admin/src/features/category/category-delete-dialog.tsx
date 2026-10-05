@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { Trash2 } from 'lucide-react'
+import { RiDeleteBinLine } from '@remixicon/react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +43,7 @@ export function CategoryDeleteDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogMedia>
-            <Trash2 className="text-destructive" />
+            <RiDeleteBinLine className="text-destructive" />
           </AlertDialogMedia>
           <AlertDialogTitle>Ангилалыг устгах уу?</AlertDialogTitle>
           <AlertDialogDescription>

@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { Trash2 } from 'lucide-react'
+import { RiDeleteBinLine } from '@remixicon/react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +17,16 @@ import type { Product } from './product-api'
 type ProductDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  product: Product | null
+  product: Pick<Product, 'id' | 'name'> | null
+  onDeleted?: () => void
 }
 
-export function ProductDeleteDialog({ open, onOpenChange, product }: ProductDeleteDialogProps) {
+export function ProductDeleteDialog({
+  open,
+  onOpenChange,
+  product,
+  onDeleted,
+}: ProductDeleteDialogProps) {
   const deleteProduct = useDeleteProduct()
 
   async function handleDelete() {
@@ -29,6 +35,7 @@ export function ProductDeleteDialog({ open, onOpenChange, product }: ProductDele
       await deleteProduct.mutateAsync(product.id)
       toast.success(`"${product.name}" барааг устгалаа.`)
       onOpenChange(false)
+      onDeleted?.()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Алдаа гарлаа.')
     }
@@ -39,7 +46,7 @@ export function ProductDeleteDialog({ open, onOpenChange, product }: ProductDele
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogMedia>
-            <Trash2 className="text-destructive" />
+            <RiDeleteBinLine className="text-destructive" />
           </AlertDialogMedia>
           <AlertDialogTitle>Барааг устгах уу?</AlertDialogTitle>
           <AlertDialogDescription>

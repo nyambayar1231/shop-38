@@ -1,17 +1,9 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
+import { RiAddLine, RiDeleteBinLine, RiPencilLine } from '@remixicon/react'
+import { Empty, ErrorBox, Loading, PageHeader, Pill } from '@/components/common'
 import { Thumbnail } from '@/components/thumbnail'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -31,7 +23,7 @@ export const Route = createFileRoute('/categories')({
 })
 
 function Categories() {
-  const { data: categories, isPending, isError } = useCategoriesQuery()
+  const categories = useCategoriesQuery()
   const [editing, setEditing] = useState<Category | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [deleting, setDeleting] = useState<Category | null>(null)
@@ -48,23 +40,79 @@ function Categories() {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          Барааны ангилалыг үүсгэх, засах, устгах.
-        </p>
-        <Button onClick={openCreate}>
-          <Plus data-icon="inline-start" />
-          Шинэ ангилал
-        </Button>
-      </div>
-
-      <CategoryList
-        categories={categories}
-        isPending={isPending}
-        isError={isError}
-        onEdit={openEdit}
-        onDelete={setDeleting}
+      <PageHeader
+        title="Ангилал"
+        description="Дэлгүүрт бараа ангилан харуулах хэсгүүд."
+        actions={
+          <Button onClick={openCreate}>
+            <RiAddLine data-icon="inline-start" />
+            Шинэ ангилал
+          </Button>
+        }
       />
+
+      <ErrorBox error={categories.error} />
+      {categories.isPending ? (
+        <Loading />
+      ) : !categories.data || categories.data.length === 0 ? (
+        <Empty>Ангилал алга. «Шинэ ангилал» дарж эхлээрэй.</Empty>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-0">
+                <span className="sr-only">Зураг</span>
+              </TableHead>
+              <TableHead>Нэр</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Төлөв</TableHead>
+              <TableHead className="w-full whitespace-normal">Тайлбар</TableHead>
+              <TableHead className="w-0">
+                <span className="sr-only">Үйлдэл</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {categories.data.map((category) => (
+              <TableRow key={category.id}>
+                <TableCell>
+                  <Thumbnail src={category.imageUrl} />
+                </TableCell>
+                <TableCell className="font-medium">{category.name}</TableCell>
+                <TableCell className="text-muted-foreground">{category.slug}</TableCell>
+                <TableCell>
+                  <Pill tone={category.status === 'active' ? 'ok' : 'dead'}>
+                    {CATEGORY_STATUS_LABELS[category.status]}
+                  </Pill>
+                </TableCell>
+                <TableCell className="max-w-0 truncate whitespace-normal text-muted-foreground">
+                  {category.description || '—'}
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => openEdit(category)}
+                      aria-label={`${category.name} ангилалыг засах`}
+                    >
+                      <RiPencilLine />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => setDeleting(category)}
+                      aria-label={`${category.name} ангилалыг устгах`}
+                    >
+                      <RiDeleteBinLine />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <CategoryFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} category={editing} />
       <CategoryDeleteDialog
@@ -75,106 +123,5 @@ function Categories() {
         category={deleting}
       />
     </>
-  )
-}
-
-function CategoryList({
-  categories,
-  isPending,
-  isError,
-  onEdit,
-  onDelete,
-}: {
-  categories: Category[] | undefined
-  isPending: boolean
-  isError: boolean
-  onEdit: (category: Category) => void
-  onDelete: (category: Category) => void
-}) {
-  if (isPending) {
-    return (
-      <Card className="flex flex-1 flex-col gap-3 p-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          // eslint-disable-next-line react/no-array-index-key
-          <Skeleton key={index} className="h-10" />
-        ))}
-      </Card>
-    )
-  }
-
-  if (isError) {
-    return (
-      <Card className="flex flex-1 items-center justify-center text-destructive">
-        Ангилалын жагсаалтыг татаж чадсангүй.
-      </Card>
-    )
-  }
-
-  if (!categories || categories.length === 0) {
-    return (
-      <Card className="flex flex-1 items-center justify-center text-muted-foreground">
-        Ангилал алга байна. «Шинэ ангилал» дарж эхлээрэй.
-      </Card>
-    )
-  }
-
-  return (
-    <Card className="flex-1 overflow-hidden p-0">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-0">
-              <span className="sr-only">Зураг</span>
-            </TableHead>
-            <TableHead>Нэр</TableHead>
-            <TableHead>Слаг</TableHead>
-            <TableHead>Төлөв</TableHead>
-            <TableHead className="w-full whitespace-normal">Тайлбар</TableHead>
-            <TableHead className="w-0">
-              <span className="sr-only">Үйлдэл</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {categories.map((category) => (
-            <TableRow key={category.id}>
-              <TableCell>
-                <Thumbnail src={category.imageUrl} />
-              </TableCell>
-              <TableCell className="font-medium">{category.name}</TableCell>
-              <TableCell className="text-muted-foreground">{category.slug}</TableCell>
-              <TableCell>
-                <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
-                  {CATEGORY_STATUS_LABELS[category.status]}
-                </Badge>
-              </TableCell>
-              <TableCell className="max-w-0 truncate whitespace-normal text-muted-foreground">
-                {category.description || '—'}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={<Button variant="ghost" size="icon-sm" />}
-                    aria-label={`${category.name} ангилалын үйлдэл`}
-                  >
-                    <MoreHorizontal />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(category)}>
-                      <Pencil />
-                      Засах
-                    </DropdownMenuItem>
-                    <DropdownMenuItem variant="destructive" onClick={() => onDelete(category)}>
-                      <Trash2 />
-                      Устгах
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
   )
 }
