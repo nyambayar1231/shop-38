@@ -20,8 +20,6 @@ export type VariantDraft = {
    * saved with one keeps it — until a new price makes it meaningless.
    */
   compareAtPrice: number | null
-  /** Only for a new variant. A saved one's stock changes through a stock movement. */
-  initialStock: number | null
 }
 
 /** Options that can produce variants: named, and with at least one value. */
@@ -42,12 +40,11 @@ const newDraft = (optionValues: string[]): VariantDraft => ({
   sku: '',
   price: null,
   compareAtPrice: null,
-  initialStock: null,
 })
 
 /**
  * The variants for `options`, reusing `previous` drafts wherever they fit, so a
- * saved variant keeps its id — and with it its stock and price history — when
+ * saved variant keeps its id — and with it its price history — when
  * options change around it:
  *
  * 1. A draft whose exact combination still exists keeps it. This also covers a

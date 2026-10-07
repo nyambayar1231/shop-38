@@ -48,11 +48,6 @@ async function toError(response: Response, fallbackMessage: string): Promise<Err
     if (field) {
       return new ProductConflictError(field, typeof body?.value === 'string' ? body.value : undefined)
     }
-    if (body?.error === 'product_has_stock_history') {
-      return new Error(
-        'Энэ бараанд нөөцийн түүх бий тул устгах боломжгүй. Оронд нь төлөвийг «Архивласан» болгоно уу.',
-      )
-    }
   }
   if (response.status === 422) {
     // The image was picked but its upload never got confirmed by S3.

@@ -54,21 +54,6 @@ export function rethrowAsClientError(error: unknown): never {
   throw error;
 }
 
-/**
- * Deleting a product cascades to its variants, and `stock_ledger.variant_id` is
- * `restrict`: stock history is never thrown away. The admin archives it instead.
- */
-export function rethrowAsHasStockHistory(error: unknown): never {
-  if (
-    violatedConstraint(error, FOREIGN_KEY_VIOLATION) === 'stock_ledger_variant_id_variant_id_fk'
-  ) {
-    throw new HTTPException(409, {
-      res: Response.json({ error: 'product_has_stock_history' }, { status: 409 }),
-    });
-  }
-  throw error;
-}
-
 /** A variant `id` in the payload that is not a live variant of this product. */
 export const unknownVariant = () =>
   new HTTPException(422, {

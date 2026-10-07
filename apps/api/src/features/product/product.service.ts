@@ -33,26 +33,13 @@ const selectProducts = (db: Executor) =>
     .innerJoin(schema.category, eq(schema.product.categoryId, schema.category.id))
     .leftJoin(schema.file, eq(schema.product.imageFileId, schema.file.id));
 
-/**
- * Stock on hand is never stored: it is the sum of the variant's ledger.
- *
- * The correlation is spelled out with table names because drizzle leaves column
- * references unqualified in a single-table select, where `"variant_id" = "id"`
- * would silently compare two columns of `stock_ledger`.
- */
-export const stockOnHand = sql<number>`(
-  select coalesce(sum(sl.quantity), 0)::int
-  from ${schema.stockLedger} sl
-  where sl.variant_id = ${schema.variant}.id
-)`;
-
 /** The one price row in effect now. */
 export const isCurrentPrice = and(
   eq(schema.price.variantId, schema.variant.id),
   isNull(schema.price.validTo),
 );
 
-/** Live variants with their current price and stock. Archived ones exist only for their history. */
+/** Live variants with their current price. Archived ones exist only for their history. */
 const selectVariants = (db: Executor, where: SQL | undefined) =>
   db
     .select({
@@ -65,7 +52,6 @@ const selectVariants = (db: Executor, where: SQL | undefined) =>
       /** `null` only for a variant that predates prices and was never given one. */
       price: schema.price.amount,
       compareAtPrice: schema.price.compareAtAmount,
-      stock: stockOnHand,
     })
     .from(schema.variant)
     .leftJoin(schema.price, isCurrentPrice)
@@ -87,7 +73,7 @@ const toVariant = ({ option1, option2, option3, productId: _, ...rest }: Variant
 
 /**
  * What a product row in the admin list needs to say about its variants without
- * loading them: how many, the price range, and total stock.
+ * loading them: how many, and the price range.
  */
 function summarize(variants: VariantRow[]) {
   const prices = variants.flatMap((v) => (v.price === null ? [] : [v.price]));
@@ -95,7 +81,6 @@ function summarize(variants: VariantRow[]) {
     variantCount: variants.length,
     minPrice: prices.length ? Math.min(...prices) : null,
     maxPrice: prices.length ? Math.max(...prices) : null,
-    totalStock: variants.reduce((sum, v) => sum + v.stock, 0),
   };
 }
 
@@ -161,7 +146,7 @@ const insertOptions = async (tx: Tx, productId: string, options: ProductOptionIn
 };
 
 /**
- * New variants, their opening prices and starting stock, in three statements
+ * New variants, and their opening prices, in two statements
  * whatever the count: over Hyperdrive every round trip costs, and a product can
  * have a hundred variants. Ids are made here so rows can be linked without
  * relying on the order `returning()` hands them back in.
@@ -194,16 +179,6 @@ const insertVariants = async (
       compareAtAmount: input.compareAtPrice ?? null,
     })),
   );
-  const opening = rows.filter(({ input }) => (input.initialStock ?? 0) > 0);
-  if (opening.length > 0) {
-    await tx.insert(schema.stockLedger).values(
-      opening.map(({ id, input }) => ({
-        variantId: id,
-        quantity: input.initialStock!,
-        reason: 'initial' as const,
-      })),
-    );
-  }
 };
 
 const insertProduct = async (
@@ -214,7 +189,7 @@ const insertProduct = async (
   return row!;
 };
 
-/** The product, its options, variants, prices and opening stock: all of it, or none. */
+/** The product, its options, variants and prices: all of it, or none. */
 export const createProduct = async (db: Database, input: CreateProductInput) => {
   await assertUploadedImage(db, input.imageFileId);
   const { options, variants, ...details } = input;
@@ -262,7 +237,7 @@ export const updateProduct = async (db: Database, id: string, input: UpdateProdu
 
 /**
  * Makes the product's options and variants exactly `input`. Variants are matched
- * by `id`; a variant left out is deleted, or archived if it has stock history.
+ * by `id`; a variant left out is deleted.
  * A price that differs from the current one closes that row and opens a new one.
  *
  * Returns `undefined` if there is no such product.
@@ -310,25 +285,7 @@ export const updateProductVariants = async (
     const keptIds = new Set(kept.map((k) => k.existing.id));
     const removedIds = current.filter((v) => !keptIds.has(v.id)).map((v) => v.id);
     if (removedIds.length > 0) {
-      const withHistory = new Set(
-        (
-          await tx
-            .selectDistinct({ id: schema.stockLedger.variantId })
-            .from(schema.stockLedger)
-            .where(inArray(schema.stockLedger.variantId, removedIds))
-        ).map((r) => r.id),
-      );
-      const toArchive = removedIds.filter((id) => withHistory.has(id));
-      const toDelete = removedIds.filter((id) => !withHistory.has(id));
-      if (toArchive.length > 0) {
-        await tx
-          .update(schema.variant)
-          .set({ archivedAt: sql`now()` })
-          .where(inArray(schema.variant.id, toArchive));
-      }
-      if (toDelete.length > 0) {
-        await tx.delete(schema.variant).where(inArray(schema.variant.id, toDelete));
-      }
+      await tx.delete(schema.variant).where(inArray(schema.variant.id, removedIds));
     }
 
     // 2. Options are replaced wholesale: nothing references them.
@@ -398,7 +355,7 @@ export const updateProductVariants = async (
       }
     }
 
-    // 5. New variants, with opening prices and stock.
+    // 5. New variants, with opening prices.
     await insertVariants(tx, productId, added);
     return true;
   });

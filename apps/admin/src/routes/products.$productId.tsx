@@ -260,7 +260,7 @@ function VariantsCard({ product, onSaved }: { product: ProductDetail; onSaved: (
       <CardHeader>
         <CardTitle>Хувилбарууд</CardTitle>
         <CardDescription>
-          Нөөц тохируулах, үнийн түүх харахын тулд хувилбарын нэр дээр дарна. Үнэ өөрчилбөл хуучин
+          Үнийн түүх харахын тулд хувилбарын нэр дээр дарна. Үнэ өөрчилбөл хуучин
           үнэ түүхэнд үлдэнэ.
         </CardDescription>
       </CardHeader>

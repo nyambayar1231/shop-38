@@ -39,8 +39,8 @@ export const categoryIdParamSchema = z.object({
 //
 // Shopify's model: a product ("Хайруулын таваг") has up to three options
 // ("Хэмжээ": 24см, 28см; "Өнгө": Хар, Улаан), and every sellable combination of
-// their values is a variant with its own SKU, price and stock. A product with no
-// options still has exactly one variant — it is what price and stock hang off.
+// their values is a variant with its own SKU and price. A product with no
+// options still has exactly one variant — it is what price hangs off.
 // ---------------------------------------------------------------------------
 
 /** Shopify's classic limits. Three options already allow far more variants than a shop can stock. */
@@ -81,12 +81,6 @@ export const productVariantSchema = z.object({
   price: moneySchema,
   /** The "was" price shown struck through. Must be higher than `price` to mean anything. */
   compareAtPrice: moneySchema.nullish(),
-  /**
-   * Starting quantity, recorded as an `initial` stock movement. Only for a new
-   * variant: an existing one's stock changes through a stock movement, so the
-   * ledger says why.
-   */
-  initialStock: z.int().min(0).max(1_000_000).optional(),
 });
 
 export type ProductVariantInput = z.infer<typeof productVariantSchema>;
@@ -204,7 +198,7 @@ export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
 /**
  * The complete desired set of options and variants. Existing variants are kept by
- * `id`; one left out is removed — or archived, if it has stock history to keep.
+ * `id`; one left out is removed.
  */
 export const updateProductVariantsSchema = z
   .object(variantsShape)

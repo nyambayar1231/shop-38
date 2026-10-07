@@ -44,11 +44,6 @@ export function StatusPill({ status }: { status: ProductStatus }) {
   return <Pill tone={PRODUCT_TONES[status]}>{PRODUCT_STATUS_LABELS[status]}</Pill>
 }
 
-/** Stock as a number, red at zero: the one figure staff scan a list for. */
-export function StockText({ value }: { value: number }) {
-  return <span className={cn('tabular-nums', value <= 0 && 'text-destructive')}>{value}</span>
-}
-
 export function Loading() {
   return (
     <div className="space-y-3" role="status" aria-label="Ачаалж байна">

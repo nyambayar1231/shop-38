@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { RiAddLine, RiArrowRightSLine, RiCloseLine, RiDeleteBinLine } from '@remixicon/react'
 import { MAX_PRODUCT_OPTIONS } from '@shop-38/contracts'
-import { FormField, StockText, num } from '@/components/common'
+import { FormField } from '@/components/common'
 import { IntegerInput } from '@/components/integer-input'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -70,14 +70,13 @@ export type VariantsEditorState = ReturnType<typeof useVariantsEditor>
 type VariantsEditorProps = {
   editor: VariantsEditorState
   errors: FormErrors
-  /** The saved variants as the server has them now, for their current stock. */
+  /** The saved variants as the server has them now, for their links to the variant pages. */
   liveVariants?: ProductVariant[]
 }
 
 /**
  * Options on top, the variants they generate below. Each variant row takes its
- * own SKU and price; a new one also its opening stock. After that, stock and
- * price history live on the variant's own page.
+ * own SKU and price. After that, price history lives on the variant's own page.
  */
 export function VariantsEditor({ editor, errors, liveVariants }: VariantsEditorProps) {
   const { options, variants, removed, setOptions } = editor
@@ -149,7 +148,7 @@ export function VariantsEditor({ editor, errors, liveVariants }: VariantsEditorP
 
       <section className="space-y-4">
         <h3 className="text-xs font-semibold tracking-wider uppercase">
-          {hasOptions ? `Хувилбарууд · ${variants.length}` : 'Үнэ ба нөөц'}
+          {hasOptions ? `Хувилбарууд · ${variants.length}` : 'Үнэ'}
         </h3>
         <VariantsTable
           variants={variants}
@@ -219,7 +218,6 @@ function VariantsTable({
             {hasOptions && <TableHead>Хувилбар</TableHead>}
             <TableHead>SKU</TableHead>
             <TableHead className="w-36">Үнэ (₮)</TableHead>
-            <TableHead className={`w-32 ${num}`}>{liveVariants ? 'Нөөц' : 'Эхний үлдэгдэл'}</TableHead>
             <TableHead className="w-0">
               <span className="sr-only">Үйлдэл</span>
             </TableHead>
@@ -272,25 +270,6 @@ function VariantsTable({
                   />
                   <CellError message={rowErrors.price} />
                 </TableCell>
-                <TableCell className={num}>
-                  {variant.id ? (
-                    <div className="flex h-10 items-center justify-end">
-                      {live ? <StockText value={live.stock} /> : '—'}
-                    </div>
-                  ) : (
-                    <>
-                      <IntegerInput
-                        value={variant.initialStock}
-                        onChange={(initialStock) => update(variant.key, { initialStock })}
-                        placeholder="0"
-                        className="text-right"
-                        aria-label={`${label} — эхний үлдэгдэл`}
-                        aria-invalid={Boolean(rowErrors.initialStock)}
-                      />
-                      <CellError message={rowErrors.initialStock} />
-                    </>
-                  )}
-                </TableCell>
                 <TableCell className="pt-3">
                   <div className="flex justify-end gap-1">
                     {live && !hasOptions && (
@@ -298,7 +277,7 @@ function VariantsTable({
                         variant="ghost"
                         size="icon-sm"
                         render={<Link to="/variants/$variantId" params={{ variantId: live.id }} />}
-                        aria-label="Үнэ, нөөцийн дэлгэрэнгүй"
+                        aria-label="Үнийн дэлгэрэнгүй"
                       >
                         <RiArrowRightSLine />
                       </Button>

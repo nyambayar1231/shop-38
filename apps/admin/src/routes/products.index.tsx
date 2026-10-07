@@ -8,7 +8,6 @@ import {
   Loading,
   PageHeader,
   StatusPill,
-  StockText,
   num,
 } from '@/components/common'
 import { Thumbnail } from '@/components/thumbnail'
@@ -58,7 +57,7 @@ function Products() {
     <>
       <PageHeader
         title="Бараа"
-        description="Бараа бүр нэг буюу хэд хэдэн хувилбартай; үнэ, нөөц хувилбар дээр байна."
+        description="Бараа бүр нэг буюу хэд хэдэн хувилбартай; үнэ хувилбар дээр байна."
         actions={
           <Button render={<Link to="/products/new" />}>
             <RiAddLine data-icon="inline-start" />
@@ -122,7 +121,6 @@ function Products() {
               <TableHead>Төлөв</TableHead>
               <TableHead className={num}>Хувилбар</TableHead>
               <TableHead className={num}>Үнэ</TableHead>
-              <TableHead className={num}>Нөөц</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -150,9 +148,6 @@ function Products() {
                 <TableCell className={num}>{product.variantCount}</TableCell>
                 <TableCell className={num}>
                   {formatPriceRange(product.minPrice, product.maxPrice)}
-                </TableCell>
-                <TableCell className={num}>
-                  <StockText value={product.totalStock} />
                 </TableCell>
               </TableRow>
             ))}

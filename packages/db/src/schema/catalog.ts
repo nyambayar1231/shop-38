@@ -95,19 +95,17 @@ export const productOption = pgTable(
 );
 
 /**
- * One sellable combination — "Хайруулын таваг / 28см / Улаан". SKU, price and
- * stock belong here, not to the product.
+ * One sellable combination — "Хайруулын таваг / 28см / Улаан". SKU and price
+ * belong here, not to the product.
  *
- * A variant with stock history is archived rather than deleted when it is
- * removed from its product, because the ledger rows pointing at it are the
- * record of where stock went. Archived variants are invisible to every
- * uniqueness rule below, so their combination and SKU can be used again.
+ * Archived variants are invisible to every uniqueness rule below, so their
+ * combination and SKU can be used again.
  */
 export const variant = pgTable(
   'variant',
   {
     id: uuid().primaryKey().defaultRandom(),
-    /** Cascade: the rows go with the product. A product with stock history cannot be deleted (see `stockLedger`). */
+    /** Cascade: the rows go with the product. */
     productId: uuid('product_id')
       .notNull()
       .references(() => product.id, { onDelete: 'cascade' }),
@@ -159,8 +157,7 @@ export const price = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
     /**
-     * Cascade: only a variant with no stock history is ever hard-deleted, and then
-     * its prices have nothing left to explain. Once orders reference prices, those
+     * Cascade: a deleted variant's prices have nothing left to explain. Once orders reference prices, those
      * references will be `restrict`.
      */
     variantId: uuid('variant_id')

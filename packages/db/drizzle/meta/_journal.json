@@ -50,6 +50,13 @@
       "when": 1790761687435,
       "tag": "0006_variants_prices_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791364565654,
+      "tag": "0007_drop_stock_ledger",
+      "breakpoints": true
     }
   ]
 }

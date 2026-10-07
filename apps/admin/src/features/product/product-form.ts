@@ -92,7 +92,6 @@ export function initialVariants(product: ProductDetail | null): VariantDraft[] {
     sku: variant.sku ?? '',
     price: variant.price,
     compareAtPrice: variant.compareAtPrice,
-    initialStock: null,
   }))
 }
 
@@ -113,7 +112,6 @@ export function variantsPayload(options: OptionDraft[], variants: VariantDraft[]
         variant.compareAtPrice > variant.price
           ? variant.compareAtPrice
           : null,
-      ...(!variant.id && variant.initialStock ? { initialStock: variant.initialStock } : {}),
     })),
   }
 }
@@ -124,7 +122,7 @@ export function variantsPayload(options: OptionDraft[], variants: VariantDraft[]
 
 export type OptionErrors = Record<number, { name?: string; values?: string }>
 
-export type VariantErrors = Record<string, { price?: string; sku?: string; initialStock?: string }>
+export type VariantErrors = Record<string, { price?: string; sku?: string }>
 
 export type FormErrors = {
   details: DetailErrors
@@ -202,7 +200,6 @@ export function toFormErrors(error: ZodError, variants: VariantDraft[]): FormErr
       const target = (errors.variants[draft.key] ??= {})
       if (field === 'price') target.price ??= 'Үнэ оруулна уу.'
       else if (field === 'sku') target.sku ??= rule ?? 'SKU 64 тэмдэгтээс урт байж болохгүй.'
-      else if (field === 'initialStock') target.initialStock ??= 'Үлдэгдэл буруу байна.'
       else errors.variantsGeneral ??= 'Хувилбаруудыг шалгана уу.'
       continue
     }
