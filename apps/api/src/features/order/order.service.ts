@@ -80,8 +80,15 @@ export const getOrderById = async (db: Executor, id: string) => {
       optionValues: schema.orderItem.optionValues,
       unitPrice: schema.orderItem.unitPrice,
       quantity: schema.orderItem.quantity,
+      /**
+       * The product's picture as it is now, not a copy: for the receipt's QR code.
+       * `null` once the product is deleted or if it never had one.
+       */
+      imageUrl: schema.file.url,
     })
     .from(schema.orderItem)
+    .leftJoin(schema.product, eq(schema.orderItem.productId, schema.product.id))
+    .leftJoin(schema.file, eq(schema.product.imageFileId, schema.file.id))
     .where(eq(schema.orderItem.orderId, id))
     .orderBy(asc(schema.orderItem.position));
   return {

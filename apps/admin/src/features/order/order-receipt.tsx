@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { variantLabel } from '@/features/product/variant-drafts'
 import { formatDateTime } from '@/lib/date'
 import { formatMoney } from '@/lib/money'
@@ -9,9 +10,13 @@ import { ORDER_STATUS_LABELS } from './order-status'
  * The paper copy handed to the customer. Rendered straight into <body>, outside
  * the admin shell, and shown only when printing: `.print-root` in index.css hides
  * everything else on paper and this on screen. So "print" is just `window.print()`.
+ *
+ * A line whose product has a picture carries a QR code of the picture's URL:
+ * a phone camera scanning it opens the image.
  */
 export function OrderReceipt({ order }: { order: OrderDetail }) {
   const quantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
+  const hasImages = order.items.some((item) => item.imageUrl)
 
   return createPortal(
     <div className="print-root font-sans text-[11pt] leading-snug text-black">
@@ -44,6 +49,9 @@ export function OrderReceipt({ order }: { order: OrderDetail }) {
             <th className="py-1.5 pr-2 text-right font-semibold">Нэгж үнэ</th>
             <th className="py-1.5 pr-2 text-right font-semibold">Тоо</th>
             <th className="py-1.5 text-right font-semibold">Дүн</th>
+            {hasImages && (
+              <th className="py-1.5 pl-3 text-center font-semibold">Зураг</th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -62,6 +70,20 @@ export function OrderReceipt({ order }: { order: OrderDetail }) {
               <td className="py-1.5 pr-2 text-right tabular-nums">{formatMoney(item.unitPrice)}</td>
               <td className="py-1.5 pr-2 text-right tabular-nums">{item.quantity}</td>
               <td className="py-1.5 text-right tabular-nums">{formatMoney(item.lineTotal)}</td>
+              {hasImages && (
+                <td className="py-1.5 pl-3">
+                  {item.imageUrl && (
+                    <QRCodeSVG
+                      value={item.imageUrl}
+                      size={64}
+                      level="M"
+                      marginSize={0}
+                      title={`${item.productName} — зураг`}
+                      className="mx-auto"
+                    />
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -74,6 +96,7 @@ export function OrderReceipt({ order }: { order: OrderDetail }) {
             <td className="pt-3 text-right text-base font-bold tabular-nums">
               {formatMoney(order.totalAmount)}
             </td>
+            {hasImages && <td />}
           </tr>
         </tfoot>
       </table>
@@ -89,6 +112,11 @@ export function OrderReceipt({ order }: { order: OrderDetail }) {
         <div className="border-t border-black pt-1">Хүлээлгэн өгсөн</div>
         <div className="border-t border-black pt-1">Хүлээн авсан</div>
       </footer>
+      {hasImages && (
+        <p className="mt-6 text-xs">
+          QR кодыг утасныхаа камераар уншуулж барааны зургийг харна уу.
+        </p>
+      )}
       <p className="mt-8 text-center text-sm">Худалдан авалт хийсэнд баярлалаа!</p>
     </div>,
     document.body,
