@@ -4,6 +4,7 @@ import {
   RiFileList3Line,
   RiPriceTag3Line,
   RiShoppingBag3Line,
+  RiUser3Line,
   type RemixiconComponentType,
 } from '@remixicon/react'
 import {
@@ -18,9 +19,10 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-const NAV: { to: '/' | '/orders' | '/products' | '/categories'; label: string; icon: RemixiconComponentType }[] = [
+const NAV: { to: '/' | '/orders' | '/customers' | '/products' | '/categories'; label: string; icon: RemixiconComponentType }[] = [
   { to: '/', label: 'Нүүр', icon: RiDashboardLine },
   { to: '/orders', label: 'Захиалга', icon: RiFileList3Line },
+  { to: '/customers', label: 'Хэрэглэгч', icon: RiUser3Line },
   { to: '/products', label: 'Бараа', icon: RiShoppingBag3Line },
   { to: '/categories', label: 'Ангилал', icon: RiPriceTag3Line },
 ]

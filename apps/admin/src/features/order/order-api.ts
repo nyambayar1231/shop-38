@@ -9,7 +9,17 @@ export type OrderDetail = InferResponseType<(typeof apiClient.orders)[':id']['$g
 
 export const orderKeys = {
   all: ['orders'] as const,
+  lists: ['orders', 'list'] as const,
+  list: (filter: { customerId?: string }) => ['orders', 'list', filter] as const,
   detail: (id: string) => ['orders', id] as const,
+}
+
+/** A 422 from the API: the chosen customer was deleted while the form was open. */
+export class UnknownCustomerError extends Error {
+  constructor() {
+    super('Сонгосон хэрэглэгч олдсонгүй. Хэрэглэгчээ дахин сонгоно уу.')
+    this.name = 'UnknownCustomerError'
+  }
 }
 
 /** A 422 from the API: these variants were archived, deleted or unpriced while the form was open. */
@@ -23,11 +33,12 @@ export class UnavailableVariantsError extends Error {
   }
 }
 
-export function useOrdersQuery() {
+/** Every order, or one customer's. */
+export function useOrdersQuery(filter: { customerId?: string } = {}) {
   return useQuery({
-    queryKey: orderKeys.all,
+    queryKey: orderKeys.list(filter),
     queryFn: async () => {
-      const res = await apiClient.orders.$get({ query: {} })
+      const res = await apiClient.orders.$get({ query: filter })
       if (!res.ok) throw new Error('Захиалгын жагсаалтыг татаж чадсангүй')
       return res.json()
     },
@@ -58,9 +69,15 @@ export function useCreateOrder() {
       if (!res.ok) {
         // The API's own 422 is thrown as an HTTPException, so hono's client types don't know it.
         const response = res as Response
-        const body = (await response.json().catch(() => null)) as { variantIds?: unknown } | null
+        const body = (await response.json().catch(() => null)) as {
+          error?: unknown
+          variantIds?: unknown
+        } | null
         if (response.status === 422 && Array.isArray(body?.variantIds)) {
           throw new UnavailableVariantsError(body.variantIds)
+        }
+        if (response.status === 422 && body?.error === 'unknown_customer') {
+          throw new UnknownCustomerError()
         }
         throw new Error('Захиалга үүсгэж чадсангүй')
       }
@@ -68,7 +85,11 @@ export function useCreateOrder() {
     },
     onSuccess: (order) => {
       queryClient.setQueryData(orderKeys.detail(order.id), order)
-      return queryClient.invalidateQueries({ queryKey: orderKeys.all, exact: true })
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: orderKeys.lists }),
+        // The customer list counts each customer's orders.
+        queryClient.invalidateQueries({ queryKey: ['customers'] }),
+      ])
     },
   })
 }
@@ -89,7 +110,7 @@ export function useUpdateOrderStatus() {
     onSettled: (_order, _error, { id }) =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: orderKeys.detail(id) }),
-        queryClient.invalidateQueries({ queryKey: orderKeys.all, exact: true }),
+        queryClient.invalidateQueries({ queryKey: orderKeys.lists }),
       ]),
   })
 }

@@ -69,6 +69,7 @@ function Orders() {
           <TableHeader>
             <TableRow>
               <TableHead>Дугаар</TableHead>
+              <TableHead>Хэрэглэгч</TableHead>
               <TableHead>Огноо</TableHead>
               <TableHead>Төлөв</TableHead>
               <TableHead className={num}>Тоо ширхэг</TableHead>
@@ -86,6 +87,18 @@ function Orders() {
                   >
                     №{order.number}
                   </Link>
+                </TableCell>
+                <TableCell>
+                  <Link
+                    to="/customers/$customerId"
+                    params={{ customerId: order.customer.id }}
+                    className="hover:underline"
+                  >
+                    {order.customer.name}
+                  </Link>
+                  <div className="text-xs text-muted-foreground tabular-nums">
+                    {order.customer.phone}
+                  </div>
                 </TableCell>
                 <TableCell className="tabular-nums">{formatDateTime(order.createdAt)}</TableCell>
                 <TableCell>

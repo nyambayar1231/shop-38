@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { RiAddLine, RiDeleteBinLine } from '@remixicon/react'
+import { RiAddLine, RiDeleteBinLine, RiUserAddLine } from '@remixicon/react'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { MAX_ORDER_ITEMS, MAX_ORDER_QUANTITY } from '@shop-38/contracts'
 import { ErrorBox, FormField, MoneyText, PageHeader, num } from '@/components/common'
 import { IntegerInput } from '@/components/integer-input'
@@ -9,12 +10,20 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
-import { UnavailableVariantsError, useCreateOrder } from '@/features/order/order-api'
+import { useCustomersQuery } from '@/features/customer/customer-api'
+import { CustomerFormDialog } from '@/features/customer/customer-form-dialog'
+import {
+  UnavailableVariantsError,
+  UnknownCustomerError,
+  useCreateOrder,
+} from '@/features/order/order-api'
 import { useProductQuery, useProductsQuery } from '@/features/product/product-api'
 import { variantLabel } from '@/features/product/variant-drafts'
 import { formatMoney } from '@/lib/money'
 
 export const Route = createFileRoute('/orders/new')({
+  // A customer's page links here with the customer already picked.
+  validateSearch: z.object({ customerId: z.string().optional() }),
   component: NewOrder,
 })
 
@@ -39,6 +48,11 @@ type LineErrors = Record<string, string>
 
 function NewOrder() {
   const navigate = useNavigate()
+  const search = Route.useSearch()
+  const customers = useCustomersQuery()
+  const [customerId, setCustomerId] = useState(search.customerId ?? '')
+  const [customerError, setCustomerError] = useState<string>()
+  const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false)
   const [lines, setLines] = useState<LineDraft[]>(() => [newLine()])
   const [note, setNote] = useState('')
   const [errors, setErrors] = useState<LineErrors>({})
@@ -67,16 +81,24 @@ function NewOrder() {
       seen.add(line.variantId)
     }
     setErrors(next)
-    if (Object.keys(next).length > 0) return
+    const nextCustomerError = customerId ? undefined : 'Хэрэглэгчээ сонгоно уу.'
+    setCustomerError(nextCustomerError)
+    if (Object.keys(next).length > 0 || nextCustomerError) return
 
     try {
       const order = await create.mutateAsync({
+        customerId,
         items: lines.map((line) => ({ variantId: line.variantId, quantity: line.quantity! })),
         note: note.trim() || null,
       })
       toast.success(`Захиалга №${order.number} үүслээ.`)
       void navigate({ to: '/orders/$orderId', params: { orderId: order.id } })
     } catch (error) {
+      if (error instanceof UnknownCustomerError) {
+        setCustomerId('')
+        setCustomerError(error.message)
+        return
+      }
       if (error instanceof UnavailableVariantsError) {
         setErrors(
           Object.fromEntries(
@@ -95,6 +117,40 @@ function NewOrder() {
       <PageHeader back={{ to: '/orders', label: 'Захиалга' }} title="Шинэ захиалга" />
 
       <form className="space-y-8" onSubmit={(event) => void submit(event)} noValidate>
+        <Card>
+          <CardHeader>
+            <CardTitle>Хэрэглэгч</CardTitle>
+            <CardDescription>Захиалга бүр нэг хэрэглэгчид хамаарна.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-end gap-4">
+            <FormField label="Хэрэглэгч" error={customerError} className="min-w-64 flex-1">
+              <NativeSelect
+                className="w-full"
+                value={customerId}
+                disabled={customers.isPending}
+                aria-invalid={Boolean(customerError) || undefined}
+                onChange={(event) => {
+                  setCustomerId(event.target.value)
+                  setCustomerError(undefined)
+                }}
+              >
+                <NativeSelectOption value="">
+                  {customers.isPending ? 'Ачаалж байна…' : 'Сонгох…'}
+                </NativeSelectOption>
+                {(customers.data ?? []).map((customer) => (
+                  <NativeSelectOption key={customer.id} value={customer.id}>
+                    {customer.name} · {customer.phone}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </FormField>
+            <Button type="button" variant="outline" onClick={() => setIsCustomerFormOpen(true)}>
+              <RiUserAddLine data-icon="inline-start" />
+              Шинэ хэрэглэгч
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Бараа</CardTitle>
@@ -148,9 +204,16 @@ function NewOrder() {
           </CardContent>
         </Card>
 
-        <ErrorBox error={create.error instanceof UnavailableVariantsError ? null : create.error} />
-        {Object.keys(errors).length > 0 && (
-          <p className="text-sm text-destructive">Улаанаар тэмдэглэсэн мөрүүдийг засна уу.</p>
+        <ErrorBox
+          error={
+            create.error instanceof UnavailableVariantsError ||
+            create.error instanceof UnknownCustomerError
+              ? null
+              : create.error
+          }
+        />
+        {(Object.keys(errors).length > 0 || customerError) && (
+          <p className="text-sm text-destructive">Улаанаар тэмдэглэсэн талбаруудыг засна уу.</p>
         )}
         <div className="flex gap-2">
           <Button type="submit" disabled={create.isPending}>
@@ -161,6 +224,16 @@ function NewOrder() {
           </Button>
         </div>
       </form>
+
+      <CustomerFormDialog
+        open={isCustomerFormOpen}
+        onOpenChange={setIsCustomerFormOpen}
+        customer={null}
+        onSaved={(customer) => {
+          setCustomerId(customer.id)
+          setCustomerError(undefined)
+        }}
+      />
     </>
   )
 }

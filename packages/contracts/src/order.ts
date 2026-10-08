@@ -24,6 +24,8 @@ export type OrderItemInput = z.infer<typeof orderItemSchema>;
 
 export const createOrderSchema = z
   .object({
+    /** Every order is placed for a customer. */
+    customerId: z.uuid(),
     items: z.array(orderItemSchema).min(1).max(MAX_ORDER_ITEMS),
     note: z.string().trim().max(1000).nullish(),
   })
@@ -56,4 +58,5 @@ export const orderIdParamSchema = z.object({
 
 export const listOrdersQuerySchema = z.object({
   status: z.enum(ORDER_STATUSES).optional(),
+  customerId: z.uuid().optional(),
 });

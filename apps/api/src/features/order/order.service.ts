@@ -7,7 +7,7 @@ import type {
   UpdateOrderStatusInput,
 } from '@shop-38/contracts';
 import { isCurrentPrice, optionValuesOf } from '../product/product.service.js';
-import { unavailableVariants } from './order.errors.js';
+import { unavailableVariants, unknownCustomer } from './order.errors.js';
 
 const LIST_LIMIT = 500;
 
@@ -25,24 +25,48 @@ const orderColumns = {
   updatedAt: schema.order.updatedAt,
 };
 
-/** Newest first, each with how many lines and units it has, for the admin list. */
-export const listOrders = (db: Database, filter: { status?: OrderStatus }) =>
+const customerColumns = {
+  id: schema.customer.id,
+  name: schema.customer.name,
+  phone: schema.customer.phone,
+};
+
+/** Newest first, each with its customer and how many lines and units it has, for the admin list. */
+export const listOrders = (db: Database, filter: { status?: OrderStatus; customerId?: string }) =>
   db
     .select({
       ...orderColumns,
+      customer: customerColumns,
       itemCount: sql<number>`count(${schema.orderItem.id})::int`,
       quantity: sql<number>`coalesce(sum(${schema.orderItem.quantity}), 0)::int`,
     })
     .from(schema.order)
+    .innerJoin(schema.customer, eq(schema.order.customerId, schema.customer.id))
     .leftJoin(schema.orderItem, eq(schema.orderItem.orderId, schema.order.id))
-    .where(filter.status ? eq(schema.order.status, filter.status) : undefined)
-    .groupBy(schema.order.id)
+    .where(
+      and(
+        filter.status ? eq(schema.order.status, filter.status) : undefined,
+        filter.customerId ? eq(schema.order.customerId, filter.customerId) : undefined,
+      ),
+    )
+    .groupBy(schema.order.id, schema.customer.id)
     .orderBy(desc(schema.order.createdAt))
     .limit(LIST_LIMIT);
 
-/** An order with its lines in the order they were entered. */
+/** An order with its customer, and its lines in the order they were entered. */
 export const getOrderById = async (db: Executor, id: string) => {
-  const [found] = await db.select(orderColumns).from(schema.order).where(eq(schema.order.id, id));
+  const [found] = await db
+    .select({
+      ...orderColumns,
+      customer: {
+        ...customerColumns,
+        email: schema.customer.email,
+        address: schema.customer.address,
+      },
+    })
+    .from(schema.order)
+    .innerJoin(schema.customer, eq(schema.order.customerId, schema.customer.id))
+    .where(eq(schema.order.id, id));
   if (!found) return undefined;
 
   const items = await db
@@ -78,6 +102,14 @@ export const getOrderById = async (db: Executor, id: string) => {
  */
 export const createOrder = async (db: Database, input: CreateOrderInput) => {
   const id = await db.transaction(async (tx) => {
+    // `for share`: the customer cannot be deleted before the order commits.
+    const [customer] = await tx
+      .select({ id: schema.customer.id })
+      .from(schema.customer)
+      .where(eq(schema.customer.id, input.customerId))
+      .for('share');
+    if (!customer) throw unknownCustomer();
+
     const variantIds = input.items.map((item) => item.variantId);
     // `for share` on the variant: it cannot be deleted or repriced half-way
     // through, so the price copied is the one in effect when the order commits.
@@ -125,7 +157,7 @@ export const createOrder = async (db: Database, input: CreateOrderInput) => {
 
     const [created] = await tx
       .insert(schema.order)
-      .values({ note: input.note ?? null, totalAmount })
+      .values({ customerId: customer.id, note: input.note ?? null, totalAmount })
       .returning({ id: schema.order.id });
     await tx.insert(schema.orderItem).values(lines.map((line) => ({ ...line, orderId: created!.id })));
     return created!.id;

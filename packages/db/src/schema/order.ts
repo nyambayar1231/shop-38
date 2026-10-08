@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { pgTable, text, uuid, timestamp, index, pgEnum, integer, check } from 'drizzle-orm/pg-core';
 import { ORDER_STATUSES } from '@shop-38/contracts';
 import { product, variant } from './catalog.js';
+import { customer } from './customer.js';
 
 export const orderStatus = pgEnum('order_status', ORDER_STATUSES);
 
@@ -11,6 +12,10 @@ export const order = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     /** What staff say out loud: "захиалга 1024". Never reused, gaps allowed. */
     number: integer('number').generatedAlwaysAsIdentity({ startWith: 1001 }).unique().notNull(),
+    /** `restrict`: a customer with orders cannot be deleted out from under them. */
+    customerId: uuid('customer_id')
+      .notNull()
+      .references(() => customer.id, { onDelete: 'restrict' }),
     status: orderStatus('status').notNull().default('pending'),
     note: text('note'),
     /** Whole tögrög. The sum of its items' unit price × quantity, fixed when the order is placed. */
@@ -23,6 +28,7 @@ export const order = pgTable(
   },
   (t) => [
     index('order_status_idx').on(t.status),
+    index('order_customer_id_idx').on(t.customerId),
     index('order_created_at_idx').on(t.createdAt),
     check('order_total_non_negative', sql`${t.totalAmount} >= 0`),
   ],

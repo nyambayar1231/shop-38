@@ -13,6 +13,12 @@ export const unavailableVariants = (variantIds: string[]) =>
     ),
   });
 
+/** A `customerId` with no such customer — deleted after the form loaded its list. */
+export const unknownCustomer = () =>
+  new HTTPException(422, {
+    res: Response.json({ error: 'unknown_customer', field: 'customerId' }, { status: 422 }),
+  });
+
 /** A status change on an order that is already completed or cancelled. */
 export const orderNotPending = () =>
   new HTTPException(409, {

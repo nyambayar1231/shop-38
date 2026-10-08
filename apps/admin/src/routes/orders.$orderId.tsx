@@ -94,6 +94,28 @@ function OrderPage() {
         </Stat>
       </div>
 
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Хэрэглэгч</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-1 text-sm">
+          <Link
+            to="/customers/$customerId"
+            params={{ customerId: detail.customer.id }}
+            className="font-medium hover:underline"
+          >
+            {detail.customer.name}
+          </Link>
+          <span className="tabular-nums">{detail.customer.phone}</span>
+          {detail.customer.email && <span>{detail.customer.email}</span>}
+          {detail.customer.address && (
+            <span className="whitespace-pre-line text-muted-foreground">
+              {detail.customer.address}
+            </span>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Бараа</CardTitle>

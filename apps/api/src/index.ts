@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { createDb } from '@shop-38/db';
 import type { AppEnv } from './env.js';
 import { categoryRoutes } from './features/category/category.routes.js';
+import { customerRoutes } from './features/customer/customer.routes.js';
 import { fileRoutes } from './features/file/file.routes.js';
 import { orderRoutes } from './features/order/order.routes.js';
 import { productRoutes } from './features/product/product.routes.js';
@@ -18,6 +19,7 @@ const app = new Hono<AppEnv>()
     return c.text('Healthy deployments!!!');
   })
   .route('/categories', categoryRoutes)
+  .route('/customers', customerRoutes)
   .route('/files', fileRoutes)
   .route('/orders', orderRoutes)
   .route('/products', productRoutes)
