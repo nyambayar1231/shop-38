@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { RiAddLine, RiArrowRightSLine, RiCloseLine, RiDeleteBinLine } from '@remixicon/react'
-import { MAX_PRODUCT_OPTIONS } from '@shop-38/contracts'
 import { FormField } from '@/components/common'
 import { IntegerInput } from '@/components/integer-input'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -30,10 +28,14 @@ import {
   type VariantDraft,
 } from './variant-drafts'
 
-const OPTION_PLACEHOLDERS = [
-  { name: 'Хэмжээ', values: '24см, 28см' },
-  { name: 'Өнгө', values: 'Хар, Улаан' },
-  { name: 'Материал', values: 'Ган, Ширэм' },
+/**
+ * The options staff can add, for now: they pick one and only type its values.
+ * A product saved earlier with another option name keeps it — it is shown, just
+ * not offered for new ones.
+ */
+const OPTION_TYPES = [
+  { name: 'Хэмжээ', placeholder: 'S, M, L эсвэл 24см, 28см' },
+  { name: 'Өнгө', placeholder: 'Хар, Цагаан, Улаан' },
 ]
 
 /** Options, the variants they generate, and the rows the user removed by hand. */
@@ -76,11 +78,15 @@ type VariantsEditorProps = {
 
 /**
  * Options on top, the variants they generate below. Each variant row takes its
- * own SKU and price. After that, price history lives on the variant's own page.
+ * own price; its SKU is made by the API on save. After that, price history lives
+ * on the variant's own page.
  */
 export function VariantsEditor({ editor, errors, liveVariants }: VariantsEditorProps) {
   const { options, variants, removed, setOptions } = editor
   const hasOptions = usableOptions(options).length > 0
+  const unusedTypes = OPTION_TYPES.filter(
+    (type) => !options.some((option) => option.name === type.name),
+  )
 
   function updateOption(index: number, patch: Partial<OptionDraft>) {
     setOptions(options.map((option, i) => (i === index ? { ...option, ...patch } : option)))
@@ -92,31 +98,28 @@ export function VariantsEditor({ editor, errors, liveVariants }: VariantsEditorP
         <div className="space-y-1">
           <h3 className="text-xs font-semibold tracking-wider uppercase">Сонголтууд</h3>
           <p className="text-sm text-muted-foreground">
-            Хэмжээ, өнгө гэх мэтээр ялгаатай бол нэмнэ. Утгуудын хослол бүр тусдаа хувилбар болно.
+            Хэмжээ эсвэл өнгөөр ялгаатай бол нэмээд утгуудаа бичнэ. Утгуудын хослол бүр тусдаа
+            хувилбар болно.
           </p>
         </div>
         {options.map((option, index) => {
-          const placeholder = OPTION_PLACEHOLDERS[index] ?? OPTION_PLACEHOLDERS[0]!
+          const type = OPTION_TYPES.find((t) => t.name === option.name)
           const optionErrors = errors.options[index]
           return (
             <div
               key={option.key}
-              className="grid gap-5 border p-4 sm:grid-cols-[12rem_minmax(0,1fr)_auto] sm:items-start"
+              className="grid gap-3 border p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start"
             >
-              <FormField label="Сонголтын нэр" error={optionErrors?.name}>
-                <Input
-                  value={option.name}
-                  onChange={(event) => updateOption(index, { name: event.target.value })}
-                  placeholder={placeholder.name}
-                  aria-invalid={Boolean(optionErrors?.name)}
-                />
-              </FormField>
-              <FormField label="Утгууд" hint="Бичээд Enter дарна." error={optionErrors?.values}>
+              <FormField
+                label={option.name}
+                hint="Бичээд Enter дарна."
+                error={optionErrors?.values ?? optionErrors?.name}
+              >
                 <OptionValuesInput
                   id={option.key}
                   values={option.values}
                   onChange={(values) => updateOption(index, { values })}
-                  placeholder={placeholder.values}
+                  placeholder={type?.placeholder ?? 'Утга бичих'}
                   invalid={Boolean(optionErrors?.values)}
                 />
               </FormField>
@@ -126,23 +129,30 @@ export function VariantsEditor({ editor, errors, liveVariants }: VariantsEditorP
                 size="icon-sm"
                 className="sm:mt-5"
                 onClick={() => setOptions(options.filter((_, i) => i !== index))}
-                aria-label={`«${option.name || 'Шинэ'}» сонголтыг устгах`}
+                aria-label={`«${option.name}» сонголтыг устгах`}
               >
                 <RiDeleteBinLine />
               </Button>
             </div>
           )
         })}
-        {options.length < MAX_PRODUCT_OPTIONS && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setOptions([...options, { key: newOptionKey(), name: '', values: [] }])}
-          >
-            <RiAddLine data-icon="inline-start" />
-            {options.length === 0 ? 'Сонголт нэмэх' : 'Өөр сонголт нэмэх'}
-          </Button>
+        {unusedTypes.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {unusedTypes.map((type) => (
+              <Button
+                key={type.name}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setOptions([...options, { key: newOptionKey(), name: type.name, values: [] }])
+                }
+              >
+                <RiAddLine data-icon="inline-start" />
+                {type.name}
+              </Button>
+            ))}
+          </div>
         )}
       </section>
 
@@ -250,14 +260,8 @@ function VariantsTable({
                     )}
                   </TableCell>
                 )}
-                <TableCell className="min-w-32">
-                  <Input
-                    value={variant.sku}
-                    onChange={(event) => update(variant.key, { sku: event.target.value })}
-                    placeholder="Заавал биш"
-                    aria-label={`${label} — SKU`}
-                    aria-invalid={Boolean(rowErrors.sku)}
-                  />
+                <TableCell className="pt-4 text-sm text-muted-foreground tabular-nums">
+                  {variant.sku || 'Хадгалахад үүснэ'}
                   <CellError message={rowErrors.sku} />
                 </TableCell>
                 <TableCell>

@@ -169,6 +169,8 @@ export const CONFLICT_MESSAGES = {
   slug: 'Ийм slug-тай бараа аль хэдийн бүртгэгдсэн байна.',
   code: 'Ийм кодтой бараа аль хэдийн бүртгэгдсэн байна.',
   sku: 'Энэ SKU өөр хувилбарт бүртгэгдсэн байна.',
+  /** Two saves raced for the same generated SKU; saving again picks the next free one. */
+  generatedSku: 'SKU үүсгэхэд давхцал гарлаа. Дахин хадгална уу.',
 }
 
 /**

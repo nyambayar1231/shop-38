@@ -3,3 +3,4 @@ export * from './slug.js';
 export * from './catalog.js';
 export * from './file.js';
 export * from './variant.js';
+export * from './order.js';

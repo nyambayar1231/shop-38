@@ -4,6 +4,7 @@ import { createDb } from '@shop-38/db';
 import type { AppEnv } from './env.js';
 import { categoryRoutes } from './features/category/category.routes.js';
 import { fileRoutes } from './features/file/file.routes.js';
+import { orderRoutes } from './features/order/order.routes.js';
 import { productRoutes } from './features/product/product.routes.js';
 import { variantRoutes } from './features/variant/variant.routes.js';
 
@@ -18,6 +19,7 @@ const app = new Hono<AppEnv>()
   })
   .route('/categories', categoryRoutes)
   .route('/files', fileRoutes)
+  .route('/orders', orderRoutes)
   .route('/products', productRoutes)
   .route('/variants', variantRoutes);
 

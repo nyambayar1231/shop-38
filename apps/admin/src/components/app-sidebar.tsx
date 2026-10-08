@@ -1,6 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import {
   RiDashboardLine,
+  RiFileList3Line,
   RiPriceTag3Line,
   RiShoppingBag3Line,
   type RemixiconComponentType,
@@ -17,8 +18,9 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-const NAV: { to: '/' | '/products' | '/categories'; label: string; icon: RemixiconComponentType }[] = [
+const NAV: { to: '/' | '/orders' | '/products' | '/categories'; label: string; icon: RemixiconComponentType }[] = [
   { to: '/', label: 'Нүүр', icon: RiDashboardLine },
+  { to: '/orders', label: 'Захиалга', icon: RiFileList3Line },
   { to: '/products', label: 'Бараа', icon: RiShoppingBag3Line },
   { to: '/categories', label: 'Ангилал', icon: RiPriceTag3Line },
 ]

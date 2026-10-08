@@ -22,3 +22,11 @@ export type FileStatus = (typeof FILE_STATUSES)[number];
 export const PRODUCT_STATUSES = ['draft', 'active', 'archived'] as const;
 
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
+
+/**
+ * An order starts `pending` and ends `completed` or `cancelled`. Both of those
+ * are final: an order is a record of what happened, not a draft.
+ */
+export const ORDER_STATUSES = ['pending', 'completed', 'cancelled'] as const;
+
+export type OrderStatus = (typeof ORDER_STATUSES)[number];

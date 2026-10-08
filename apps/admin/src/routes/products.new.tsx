@@ -61,10 +61,12 @@ function NewProduct() {
         }
         if (error.field === 'sku') {
           const draft = editor.variants.find((variant) => variant.sku.trim() === error.value)
-          if (draft) {
-            setErrors({ ...NO_ERRORS, variants: { [draft.key]: { sku: CONFLICT_MESSAGES.sku } } })
-            return
-          }
+          setErrors(
+            draft
+              ? { ...NO_ERRORS, variants: { [draft.key]: { sku: CONFLICT_MESSAGES.sku } } }
+              : { ...NO_ERRORS, variantsGeneral: CONFLICT_MESSAGES.generatedSku },
+          )
+          return
         }
       }
       // Anything else shows in the ErrorBox, from `create.error`.

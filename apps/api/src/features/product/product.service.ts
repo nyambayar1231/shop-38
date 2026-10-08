@@ -1,7 +1,8 @@
-import { and, asc, eq, getTableColumns, inArray, isNull, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, inArray, isNull, like, ne, or, sql, type SQL } from 'drizzle-orm';
 import { schema } from '@shop-38/db';
 import type { Database, Executor, Tx } from '@shop-38/db';
 import {
+  slugify,
   variantCombinationKey,
   type CreateProductInput,
   type ProductOptionInput,
@@ -136,6 +137,59 @@ const optionColumns = (values: readonly string[]) => ({
   option3: values[2] ?? null,
 });
 
+const MAX_SKU_LENGTH = 64;
+
+/** `PAN-28SM-KHAR`: the product's code (or a short id when it has none), then its option values. */
+function derivedSku(product: { id: string; code: string | null }, optionValues: readonly string[]) {
+  const prefix =
+    slugify(product.code ?? '').slice(0, 24) || `p${product.id.replaceAll('-', '').slice(0, 8)}`;
+  const parts = optionValues.map((value) => slugify(value).slice(0, 12)).filter(Boolean);
+  return [prefix, ...parts].join('-').replace(/-+/g, '-').toUpperCase().slice(0, MAX_SKU_LENGTH);
+}
+
+/**
+ * Staff don't type SKUs: every variant sent without one gets one derived from its
+ * product and options. A candidate already taken — by another variant in this
+ * payload or by a live variant of another product — gets `-2`, `-3`… appended.
+ * A SKU sent explicitly is kept as is.
+ */
+const withSkus = async <T extends ProductVariantInput>(
+  tx: Tx,
+  product: { id: string; code: string | null },
+  variants: T[],
+): Promise<T[]> => {
+  const missing = variants.filter((v) => !v.sku);
+  if (missing.length === 0) return variants;
+
+  const bases = new Map(missing.map((v) => [v, derivedSku(product, v.optionValues)]));
+  const taken = await tx
+    .select({ sku: schema.variant.sku })
+    .from(schema.variant)
+    .where(
+      and(
+        isNull(schema.variant.archivedAt),
+        ne(schema.variant.productId, product.id),
+        or(...[...new Set(bases.values())].map((base) => like(schema.variant.sku, `${base}%`))),
+      ),
+    );
+  const used = new Set([
+    ...taken.map((row) => row.sku!),
+    ...variants.flatMap((v) => (v.sku ? [v.sku] : [])),
+  ]);
+
+  return variants.map((v) => {
+    const base = bases.get(v);
+    if (!base) return v;
+    let sku = base;
+    for (let n = 2; used.has(sku); n++) {
+      const suffix = `-${n}`;
+      sku = base.slice(0, MAX_SKU_LENGTH - suffix.length) + suffix;
+    }
+    used.add(sku);
+    return { ...v, sku };
+  });
+};
+
 const insertOptions = async (tx: Tx, productId: string, options: ProductOptionInput[]) => {
   if (options.length === 0) return;
   await tx
@@ -208,10 +262,11 @@ export const createProduct = async (db: Database, input: CreateProductInput) => 
           isSlugConflict,
         );
     await insertOptions(tx, id, options);
+    const withSku = await withSkus(tx, { id, code: details.code ?? null }, variants);
     await insertVariants(
       tx,
       id,
-      variants.map((v, position) => ({ input: v, position })),
+      withSku.map((v, position) => ({ input: v, position })),
     );
     return id;
   });
@@ -251,11 +306,12 @@ export const updateProductVariants = async (
     // Locks the product, so two saves of the same product queue rather than
     // interleave their deletes and inserts.
     const [product] = await tx
-      .select({ id: schema.product.id })
+      .select({ id: schema.product.id, code: schema.product.code })
       .from(schema.product)
       .where(eq(schema.product.id, productId))
       .for('update');
     if (!product) return false;
+    const variants = await withSkus(tx, product, input.variants);
 
     const current = await tx
       .select({
@@ -273,13 +329,13 @@ export const updateProductVariants = async (
       .where(and(eq(schema.variant.productId, productId), isNull(schema.variant.archivedAt)));
     const currentById = new Map(current.map((v) => [v.id, v]));
 
-    const kept = input.variants.flatMap((v, position) => {
+    const kept = variants.flatMap((v, position) => {
       if (!v.id) return [];
       const existing = currentById.get(v.id);
       if (!existing) throw unknownVariant();
       return [{ input: v, position, existing }];
     });
-    const added = input.variants.flatMap((v, position) => (v.id ? [] : [{ input: v, position }]));
+    const added = variants.flatMap((v, position) => (v.id ? [] : [{ input: v, position }]));
 
     // 1. Removed variants go first, freeing their combinations and SKUs.
     const keptIds = new Set(kept.map((k) => k.existing.id));

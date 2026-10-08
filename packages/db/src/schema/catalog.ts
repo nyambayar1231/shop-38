@@ -157,8 +157,8 @@ export const price = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
     /**
-     * Cascade: a deleted variant's prices have nothing left to explain. Once orders reference prices, those
-     * references will be `restrict`.
+     * Cascade: a deleted variant's prices have nothing left to explain. Orders do not reference
+     * prices; each order line keeps its own copy of the unit price.
      */
     variantId: uuid('variant_id')
       .notNull()

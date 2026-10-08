@@ -250,7 +250,11 @@ function VariantsCard({ product, onSaved }: { product: ProductDetail; onSaved: (
     } catch (error) {
       if (error instanceof ProductConflictError && error.field === 'sku') {
         const draft = editor.variants.find((variant) => variant.sku.trim() === error.value)
-        if (draft) setErrors({ ...NO_ERRORS, variants: { [draft.key]: { sku: CONFLICT_MESSAGES.sku } } })
+        setErrors(
+          draft
+            ? { ...NO_ERRORS, variants: { [draft.key]: { sku: CONFLICT_MESSAGES.sku } } }
+            : { ...NO_ERRORS, variantsGeneral: CONFLICT_MESSAGES.generatedSku },
+        )
       }
     }
   }
