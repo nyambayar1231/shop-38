@@ -135,3 +135,35 @@
     @apply font-serif;
   }
 }
+
+/*
+ * Printing: only `.print-root` (rendered straight into <body>, e.g. the order
+ * receipt) goes on paper, and it never shows on screen. Light colours always,
+ * whatever theme the screen is in.
+ */
+.print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    background: white;
+  }
+
+  body > :not(.print-root) {
+    display: none !important;
+  }
+
+  .print-root {
+    display: block;
+  }
+}

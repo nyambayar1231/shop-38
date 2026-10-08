@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { RiPrinterLine } from '@remixicon/react'
 import { toast } from 'sonner'
 import type { UpdateOrderStatusInput } from '@shop-38/contracts'
 import {
@@ -22,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useOrderQuery, useUpdateOrderStatus } from '@/features/order/order-api'
+import { OrderReceipt } from '@/features/order/order-receipt'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from '@/features/order/order-status'
 import { variantLabel } from '@/features/product/variant-drafts'
 import { formatDateTime } from '@/lib/date'
@@ -66,23 +68,33 @@ function OrderPage() {
         }
         description={`Үүсгэсэн: ${formatDateTime(detail.createdAt)}`}
         actions={
-          detail.status === 'pending' && (
-            <>
-              <Button
-                variant="outline"
-                disabled={updateStatus.isPending}
-                onClick={() => void changeStatus('cancelled')}
-              >
-                Цуцлах
-              </Button>
-              <Button disabled={updateStatus.isPending} onClick={() => void changeStatus('completed')}>
-                Биелсэн гэж тэмдэглэх
-              </Button>
-            </>
-          )
+          <>
+            <Button variant="outline" onClick={() => window.print()}>
+              <RiPrinterLine data-icon="inline-start" />
+              Хэвлэх
+            </Button>
+            {detail.status === 'pending' && (
+              <>
+                <Button
+                  variant="outline"
+                  disabled={updateStatus.isPending}
+                  onClick={() => void changeStatus('cancelled')}
+                >
+                  Цуцлах
+                </Button>
+                <Button
+                  disabled={updateStatus.isPending}
+                  onClick={() => void changeStatus('completed')}
+                >
+                  Биелсэн гэж тэмдэглэх
+                </Button>
+              </>
+            )}
+          </>
         }
       />
 
+      <OrderReceipt order={detail} />
       <ErrorBox error={updateStatus.error} />
 
       <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
