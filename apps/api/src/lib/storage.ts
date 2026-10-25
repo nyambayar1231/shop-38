@@ -59,27 +59,9 @@ export function createStorage(env: StorageBindings) {
     service: 's3',
     region: config.region,
   };
-  // HEAD is safe to retry, but aws4fetch retries 10 times by default. That can hold
+  // Reads are safe to retry, but aws4fetch retries 10 times by default. That can hold
   // a request open for tens of seconds while S3 is failing.
   const client = new AwsClient({ ...credentials, retries: 2 });
-
-  /**
-   * A HEAD response has no body, so S3 gives no reason for a failure. A one-byte
-   * ranged GET fails the same way but carries the XML error (`AccessDenied`,
-   * `SignatureDoesNotMatch`, ...). Best effort: it only enriches the error message.
-   */
-  const errorDetail = async (key: string) => {
-    try {
-      const res = await client.fetch(objectUrl(key), { headers: { range: 'bytes=0-0' } });
-      if (res.ok) return ' (a ranged GET succeeded)';
-      const body = await res.text();
-      const code = /<Code>([^<]+)<\/Code>/.exec(body)?.[1];
-      const message = /<Message>([^<]+)<\/Message>/.exec(body)?.[1];
-      return ` (${[code, message].filter(Boolean).join(': ') || `GET ${res.status}`})`;
-    } catch {
-      return '';
-    }
-  };
 
   return {
     publicUrl: (key: string) =>
@@ -123,12 +105,23 @@ export function createStorage(env: StorageBindings) {
      * Grant it, or an upload that never happened shows up as a storage failure.
      */
     async head(key: string): Promise<StoredObject | null> {
-      const res = await client.fetch(objectUrl(key), { method: 'HEAD' });
+      // A one-byte ranged GET, not HEAD: in production S3 answered a signed HEAD for
+      // an existing object with 403 while this GET, same credentials, succeeded. It
+      // also carries S3's XML error on failure, which a HEAD response never does.
+      const res = await client.fetch(objectUrl(key), { headers: { range: 'bytes=0-0' } });
       if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`S3 HEAD ${key} failed with ${res.status}${await errorDetail(key)}`);
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        const code = /<Code>([^<]+)<\/Code>/.exec(body)?.[1];
+        throw new Error(`S3 GET ${key} failed with ${res.status}${code ? ` (${code})` : ''}`);
+      }
+      // Drop the body so the connection is released.
+      await res.body?.cancel();
 
-      const size = Number(res.headers.get('content-length'));
-      if (!Number.isSafeInteger(size)) throw new Error(`S3 HEAD ${key} returned no content-length`);
+      // The whole object's size is the number after the slash: `bytes 0-0/12345`.
+      const total = /\/(\d+)$/.exec(res.headers.get('content-range') ?? '')?.[1];
+      const size = total === undefined ? Number.NaN : Number(total);
+      if (!Number.isSafeInteger(size)) throw new Error(`S3 GET ${key} returned no content-range`);
       return { size, contentType: res.headers.get('content-type') };
     },
   };
