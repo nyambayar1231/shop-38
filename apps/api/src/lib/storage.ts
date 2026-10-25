@@ -63,6 +63,24 @@ export function createStorage(env: StorageBindings) {
   // a request open for tens of seconds while S3 is failing.
   const client = new AwsClient({ ...credentials, retries: 2 });
 
+  /**
+   * A HEAD response has no body, so S3 gives no reason for a failure. A one-byte
+   * ranged GET fails the same way but carries the XML error (`AccessDenied`,
+   * `SignatureDoesNotMatch`, ...). Best effort: it only enriches the error message.
+   */
+  const errorDetail = async (key: string) => {
+    try {
+      const res = await client.fetch(objectUrl(key), { headers: { range: 'bytes=0-0' } });
+      if (res.ok) return ' (a ranged GET succeeded)';
+      const body = await res.text();
+      const code = /<Code>([^<]+)<\/Code>/.exec(body)?.[1];
+      const message = /<Message>([^<]+)<\/Message>/.exec(body)?.[1];
+      return ` (${[code, message].filter(Boolean).join(': ') || `GET ${res.status}`})`;
+    } catch {
+      return '';
+    }
+  };
+
   return {
     publicUrl: (key: string) =>
       config.publicBaseUrl ? `${config.publicBaseUrl}/${key}` : objectUrl(key),
@@ -107,7 +125,7 @@ export function createStorage(env: StorageBindings) {
     async head(key: string): Promise<StoredObject | null> {
       const res = await client.fetch(objectUrl(key), { method: 'HEAD' });
       if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`S3 HEAD ${key} failed with ${res.status}`);
+      if (!res.ok) throw new Error(`S3 HEAD ${key} failed with ${res.status}${await errorDetail(key)}`);
 
       const size = Number(res.headers.get('content-length'));
       if (!Number.isSafeInteger(size)) throw new Error(`S3 HEAD ${key} returned no content-length`);
