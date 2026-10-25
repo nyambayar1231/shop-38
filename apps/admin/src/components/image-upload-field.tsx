@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { RiImageLine, RiLoader4Line } from '@remixicon/react'
-import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from '@shop-38/contracts'
+import { MAX_UPLOAD_BYTES } from '@shop-38/contracts'
 import { Button } from '@/components/ui/button'
+import {
+  isPickableImage,
+  MAX_PICKED_BYTES,
+  PICKABLE_IMAGE_TYPES,
+  prepareImage,
+} from '@/lib/prepare-image'
 import { uploadFile } from '@/lib/upload-file'
 
+const MAX_PICKED_MB = MAX_PICKED_BYTES / (1024 * 1024)
 const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024)
 
 /** Checked before anything is sent, so an obviously wrong file fails instantly and in Mongolian. */
 function validateImage(file: File): string | null {
-  if (!(UPLOAD_CONTENT_TYPES as readonly string[]).includes(file.type)) {
-    return 'Зөвхөн JPG, PNG, WebP, AVIF эсвэл GIF зураг оруулна уу.'
+  if (!isPickableImage(file)) {
+    return 'Зөвхөн JPG, PNG, WebP, AVIF, GIF эсвэл HEIC зураг оруулна уу.'
   }
   if (file.size === 0) return 'Файл хоосон байна.'
-  if (file.size > MAX_UPLOAD_BYTES) return `Зургийн хэмжээ ${MAX_UPLOAD_MB} МБ-аас их байж болохгүй.`
+  if (file.size > MAX_PICKED_BYTES) return `Зургийн хэмжээ ${MAX_PICKED_MB} МБ-аас их байж болохгүй.`
   return null
 }
 
@@ -42,11 +49,13 @@ export function ImageUploadField({
   const blobUrlsRef = useRef(new Set<string>())
   /** What the saved value shows: the existing image, or the last successful upload. */
   const [committedUrl, setCommittedUrl] = useState(initialUrl)
+  /** True while the picked photo is being resized and converted, before its upload starts. */
+  const [isPreparing, setIsPreparing] = useState(false)
   /** A local preview of the file being uploaded right now. */
   const [pendingUrl, setPendingUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const isUploading = pendingUrl !== null
+  const isUploading = isPreparing || pendingUrl !== null
   const previewUrl = pendingUrl ?? committedUrl
 
   // Closing the dialog mid-upload cancels it and frees every local preview.
@@ -82,13 +91,26 @@ export function ImageUploadField({
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
-    const localUrl = createPreview(file)
-    setPendingUrl(localUrl)
+    setIsPreparing(true)
     setError(null)
     onUploadingChange(true)
+    let localUrl: string | null = null
 
     try {
-      const uploaded = await uploadFile(file, controller.signal)
+      // Phone photos are several MB and often HEIC, which most browsers cannot show.
+      // The upload is the resized WebP/JPEG instead, and so is the preview.
+      const prepared = await prepareImage(file).catch(() => {
+        throw new Error('Зургийг уншиж чадсангүй. Өөр зураг сонгоно уу.')
+      })
+      if (controller.signal.aborted) return
+      if (prepared.size > MAX_UPLOAD_BYTES) {
+        throw new Error(`Зургийн хэмжээ ${MAX_UPLOAD_MB} МБ-аас их байж болохгүй.`)
+      }
+      localUrl = createPreview(prepared)
+      setPendingUrl(localUrl)
+      setIsPreparing(false)
+
+      const uploaded = await uploadFile(prepared, controller.signal)
       if (controller.signal.aborted) {
         releasePreview(localUrl)
         return
@@ -104,6 +126,7 @@ export function ImageUploadField({
       // A newer pick replaced this upload, and that one owns the state from here on.
       if (abortRef.current === controller) {
         abortRef.current = null
+        setIsPreparing(false)
         setPendingUrl(null)
         onUploadingChange(false)
       }
@@ -154,7 +177,8 @@ export function ImageUploadField({
           ref={inputRef}
           id={id}
           type="file"
-          accept={UPLOAD_CONTENT_TYPES.join(',')}
+          // The extensions cover browsers that report an empty type for HEIC.
+          accept={[...PICKABLE_IMAGE_TYPES, '.heic', '.heif'].join(',')}
           className="sr-only"
           disabled={isUploading}
           onChange={(event) => {
@@ -168,9 +192,11 @@ export function ImageUploadField({
 
       <p className={error ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'} aria-live="polite">
         {error ??
-          (isUploading
-            ? 'Зургийг хуулж байна…'
-            : `Заавал биш. JPG, PNG, WebP, AVIF эсвэл GIF, ${MAX_UPLOAD_MB} МБ хүртэл.`)}
+          (isPreparing
+            ? 'Зургийг боловсруулж байна…'
+            : isUploading
+              ? 'Зургийг хуулж байна…'
+              : `Заавал биш. JPG, PNG, WebP, AVIF, GIF эсвэл HEIC, ${MAX_PICKED_MB} МБ хүртэл.`)}
       </p>
     </div>
   )
